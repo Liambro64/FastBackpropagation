@@ -1,7 +1,7 @@
 main = main.cpp
 dbgout = bin/dbg.out
 out = bin/main.out
-code = src/NeuralNetwork.cpp src/NetworkTrainer.cpp
+code = src/Acceleration.cu src/NeuralNetwork.cpp src/NetworkTrainer.cpp src/Math.cpp 
 
 all : runtest
 
@@ -9,10 +9,10 @@ runtest : buildtest
 	./$(out)
 
 buildtest :
-	g++ $(main) $(code) -o $(out)
+	nvcc -arch=compute_86 $(main) $(code) -o $(out)
 
 rundebug :
-	./$(out)
+	./$(dbgout)
 
 debugbuild :
-	g++ -g $(main) $(code) -o $(dbgout)
+	nvcc -g $(main) $(code) -o $(dbgout)

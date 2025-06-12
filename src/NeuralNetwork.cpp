@@ -1,21 +1,66 @@
 #include "../Project.hpp"
 
-ddd NeuralNetwork::sigmoid(ddd x)
+vec<vec<vec<ddd>>> NeuralNetwork::extractWeights()
 {
-	return 1.0 / (1.0 + exp(-x));
+	vec<vec<vec<ddd>>> extractedWeights;
+	for (int i = 0; i < weights.size(); i++)
+	{
+		vec<vec<ddd>> extractedLayer;
+		for (int j = 0; j < weights[i].size(); j++)
+		{
+			vec<ddd> extractedNeuron(weights[i][j].size() - 1); // Exclude bias
+			std::copy(weights[i][j].begin() + 1, weights[i][j].end(), extractedNeuron.begin()); // Copy weights excluding bias
+			extractedLayer.push_back(extractedNeuron);
+		}
+		extractedWeights.push_back(extractedLayer);
+	}
+	return extractedWeights;
 }
-ddd NeuralNetwork::sigmoidInverse(ddd x)
+void NeuralNetwork::InjectWeights(const vec<vec<vec<ddd>>> &extractedWeights)
 {
-	return std::log(x / (1 - x));
+	for (int i = 0; i < weights.size(); i++)
+	{
+		for (int j = 0; j < weights[i].size(); j++)
+		{
+			for (int k = 1; k < weights[i][j].size(); k++)
+			{
+				weights[i][j][k] = extractedWeights[i][j][k - 1]; // Adjust index for bias
+			}
+		}
+	}
 }
 
-NeuralNetwork::NeuralNetwork(vec<int> layerSizes, ddd (*randFunc)()) : randFunc(randFunc)
+vec<vec<ddd>> NeuralNetwork::extractBiases()
+{
+	vec<vec<ddd>> extractedWeights;
+	for (int i = 0; i < weights.size(); i++)
+	{
+		vec<ddd> extractedLayer;
+		for (int j = 0; j < weights[i].size(); j++)
+		{
+			extractedLayer.push_back(weights[i][j][0]);
+		}
+		extractedWeights.push_back(extractedLayer);
+	}
+	return extractedWeights;
+}
+void NeuralNetwork::InjectBiases(const vec<vec<ddd>> &extractedBiases)
+{
+	for (int i = 0; i < weights.size(); i++)
+	{
+		for (int j = 0; j < weights[i].size(); j++)
+		{
+			weights[i][j][0] = extractedBiases[i][j]; // Bias is always at index 0
+		}
+	}
+}
+NeuralNetwork::NeuralNetwork(int inputs, vec<int> layerSizes, ddd (*randFunc)()) : randFunc(randFunc), inputs(inputs)
 {
 	weights = vec<vec<vec<ddd>>>();
 	// Initialize weights for each layer
 	for (int i = 0; i < layerSizes.size(); i++)
 	{
-		int prevSize = (i == 0) ? 0 : layerSizes[i - 1];
+		int prevSize = (i == 0) ? inputs : layerSizes[i - 1];
 		vec<vec<ddd>> layerWeights;
 		for (int j = 0; j < layerSizes[i]; j++)
 		{
@@ -34,82 +79,65 @@ NeuralNetwork::NeuralNetwork(vec<int> layerSizes, ddd (*randFunc)()) : randFunc(
 }
 vec<ddd> NeuralNetwork::Run(vec<ddd> *input)
 {
-	vec<ddd> lastVals(input->size());
-	std::copy(input->begin(), input->end(), lastVals.begin());
-	for (int i = 1; i < weights.size(); i++)
-	{
-		vec<ddd> vals(weights[i].size());
-		for (int j = 0; j < weights[i].size(); j++)
-		{
-			vals[j] = weights[i][j][0];
-			for (int k = 1; k < weights[i][j].size(); k++)
-			{
-				vals[j] += lastVals[k - 1] * weights[i][j][k];
-			}
-			vals[j] = sigmoid(vals[j]);
-		}
-		lastVals = vals;
-	}
-	return lastVals;
+	return NetworkRunSum(*input, weights);
 }
-ddd NeuralNetwork::Learn(vec<ddd> *input, vec<ddd> *expectedOutput, ddd learningRate)
+vec<ddd> NeuralNetwork::RunGPU(vec<ddd> *input)
+{
+	return FullRun(*input, weights)[weights.size() - 1];
+}
+ddd NeuralNetwork::Learn(vec<ddd> input, vec<ddd> expectedOutput, ddd learningRate)
 {
 	// run but keep the values
-	vec<vec<ddd>> lastVals(weights.size());
-	std::copy(input->begin(), input->end(), lastVals[0].begin());
-	for (int i = 1; i < weights.size(); i++)
-	{
-		vec<ddd> vals(weights[i].size());
-		for (int j = 0; j < weights[i].size(); j++)
-		{
-			vals[j] = weights[i][j][0];
-			for (int k = 1; k < weights[i][j].size(); k++)
-			{
-				vals[j] += lastVals[i - 1][k - 1] * weights[i][j][k];
-			}
-			vals[j] = sigmoid(vals[j]);
-		}
-		lastVals[i] = vals;
-	}
-	vec<vec<ddd>> errVals(weights.size());
-	vec<vec<ddd>> trueVals(weights.size());
+	vec<vec<ddd>> values;
+	values.resize(weights.size());
 	for (int i = 0; i < weights.size(); i++)
 	{
-		errVals[i] = vec<ddd>(weights[i].size());
-		trueVals[i] = vec<ddd>(weights[i].size());
-	}
-	for (int i = lastVals.size() - 1; i > 0; i--)
-	{
-		for (int j = 0; j < lastVals[i].size(); j++)
+		values[i] = weightedSums(i == 0 ? input : values[i - 1], weights[i]);
+		if (values[i].size() == 0)
 		{
-			if (i == lastVals.size() - 1)
-			{
-				trueVals[i][j] = sigmoidInverse(lastVals[i][j]);
-				errVals[i][j] = expectedOutput->at(j) - lastVals[i][j];
-			}
-			else
-			{
-				trueVals[i][j] = sigmoidInverse(lastVals[i][j]);
-				for (int k = 0; k < errVals[i + 1].size(); k++)
-				{
-					// the error of the "neuron" should increase by the error of its connections
-					// although the neuron's synapses have already been altered
-					errVals[i][j] += ((trueVals[i][j] * weights[i + 1][k][j + 1]) / trueVals[i + 1][k]);
-				}
-			}
-			for (int k = 0; k < lastVals[i - 1].size(); k++)
-			{
-				// this should change the weights accordingly
-				weights[i][j][k + 1] *= 1 + alpha * (((sigmoidInverse(lastVals[i - 1][k]) * weights[i][j][k + 1]) / lastVals[i][j]) * errVals[i][j]);
-			}
-			weights[i][j][0] *= 1 + alpha * (weights[i][j][0] / sigmoidInverse(lastVals[i][j]));
+			throw std::runtime_error("errored at: " + i);
 		}
 	}
-	ddd totErr = 0;
-	for (int i = 0; i < errVals.size(); i++) {
-		for (int j = 0; j < errVals[i].size(); j++) {
-			totErr = errVals[i][j];
+	double loss = LossFunction(expectedOutput, values[weights.size() - 1]);
+	vec<vec<ddd>> errVals(weights.size());			  // deltas (for biases)
+	vec<vec<vec<ddd>>> weightChanges(weights.size()); // deltas (for weights)
+	for (int i = 0; i < weights.size(); i++)
+	{
+		errVals[i].resize(weights[i].size());
+	}
+	for (int j = 0; j < weights[weights.size() - 1].size(); j++)
+	{
+		errVals[weights.size() - 1][j] = LossDerivative(expectedOutput[j], values[weights.size() - 1][j]) * sigmoidDerivative(values[weights.size() - 1][j]);
+	}
+	auto preTransposedWeights = transpose(extractWeights());
+	for (int i = weights.size() - 2; i >= 0; i--)
+	{
+		weightChanges[i] = outerProduct(values[i], errVals[i + 1]);
+		if (i != 0)
+		{
+			vec<ddd> err = vector_matrix_multiply(errVals[i + 1], preTransposedWeights[i + 1]);
+			for (int j = 0; j < weights[i].size(); j++)
+			{
+				errVals[i][j] = err[j] * sigmoidDerivative(values[i][j]);
+			}
 		}
 	}
-	return totErr;
+	for (int i = 1; i < weightChanges.size(); i++)
+	{
+		for (int j = 0; j < weightChanges[i].size(); j++)
+		{
+			weights[i][j][0] -= learningRate * errVals[i][j];
+			for (int k = 1; k < weights[i][j].size(); k++)
+			{
+				weights[i][j][k] -= learningRate * weightChanges[i-1][k - 1][j];
+			}
+		}
+	}
+
+	return loss;
+}
+
+ddd NeuralNetwork::LearnGPU(vec<ddd> input, vec<ddd> expectedOutput, ddd learningRate)
+{
+	
 }
