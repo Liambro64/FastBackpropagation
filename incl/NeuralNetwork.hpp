@@ -34,8 +34,10 @@ public:
 	//function to calculate the output of the neural network given an input vector
 	vec<ddd> Run(vec<ddd> *input);
 	vec<ddd> RunGPU(vec<ddd> *input);
-	ddd Learn(vec<ddd> input, vec<ddd> expectedOutput, ddd learningRate);
+	ddd Learn(vec<ddd> input, vec<ddd> expectedOutput);
 	ddd LearnGPU(vec<ddd> input, vec<ddd> expectedOutput, ddd learningRate);
+	size_t SaveWeights(std::string filename);
+	bool LoadWeights(std::string filename);
 };
 
 #endif
