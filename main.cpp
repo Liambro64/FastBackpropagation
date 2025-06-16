@@ -64,7 +64,7 @@ int main()
 {
 	//TrainerTest();
 	//smalltrainertest();
-	realCPUTest();
+	//realCPUTest();
 	//largeTrainertestGPU();
 	return 0;
 }
