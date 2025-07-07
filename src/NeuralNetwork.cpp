@@ -8,7 +8,7 @@ vec<vec<vec<ddd>>> NeuralNetwork::extractWeights()
 		vec<vec<ddd>> extractedLayer;
 		for (int j = 0; j < weights[i].size(); j++)
 		{
-			vec<ddd> extractedNeuron(weights[i][j].size() - 1); // Exclude bias
+			vec<ddd> extractedNeuron(weights[i][j].size() - 1);									// Exclude bias
 			std::copy(weights[i][j].begin() + 1, weights[i][j].end(), extractedNeuron.begin()); // Copy weights excluding bias
 			extractedLayer.push_back(extractedNeuron);
 		}
@@ -29,7 +29,36 @@ void NeuralNetwork::InjectWeights(const vec<vec<vec<ddd>>> &extractedWeights)
 		}
 	}
 }
-
+bool NeuralNetwork::operator==(const NeuralNetwork &other)
+{
+	bool equal = true;// (inputs == other.inputs && weights == other.weights);
+	try
+	{
+		if (equal)
+		{
+			for (int i = 0; i < weights.size(); i++)
+			{
+				for (int j = 0; j < weights[i].size(); j++)
+				{
+					for (int k = 0; k < weights[i][j].size(); k++)
+					{
+						if (weights[i][j][k] != other.weights[i][j][k])
+						{
+							std::cout << "Weights differ at layer " << i << ", neuron " << j << ", weight " << k << std::endl;
+							return false; // If any weight is different, return false
+						}
+					}
+				}
+			}
+			return true;
+		}
+	}
+	catch (const std::exception &e)
+	{
+		std::cout << "Error comparing NeuralNetworks: " << e.what() << std::endl;
+	}
+	return false;
+}
 vec<vec<ddd>> NeuralNetwork::extractBiases()
 {
 	vec<vec<ddd>> extractedWeights;
@@ -77,6 +106,45 @@ NeuralNetwork::NeuralNetwork(int inputs, vec<int> layerSizes, ddd (*randFunc)())
 		weights.push_back(layerWeights);
 	}
 }
+void NeuralNetwork::GenerateWeights(int inputs, vec<int> layerSizes)
+{
+	weights = vec<vec<vec<ddd>>>();
+	// Initialize weights for each layer
+	for (int i = 0; i < layerSizes.size(); i++)
+	{
+		int prevSize = (i == 0) ? inputs : layerSizes[i - 1];
+		vec<vec<ddd>> layerWeights;
+		for (int j = 0; j < layerSizes[i]; j++)
+		{
+			vec<ddd> neuronWeights;
+			// Bias for the neuron
+			neuronWeights.push_back(0);
+			// Weights for inputs from previous layer neurons
+			for (int k = 0; k < prevSize; k++)
+			{
+				neuronWeights.push_back(0);
+			}
+			layerWeights.push_back(neuronWeights);
+		}
+		weights.push_back(layerWeights);
+	}
+}
+long NeuralNetwork::SetWeightsFromArray(vec<ddd> weightsAsArray)
+{
+	long totalIndex = 0;
+	for (int i = 0; i < weights.size(); i++)
+	{
+		for (int j = 0; j < weights[i].size(); j++)
+		{
+			for (int k = 0; k < weights[i][j].size(); k++)
+			{
+				weights[i][j][k] = weightsAsArray[totalIndex++];
+			}
+		}
+	}
+	return totalIndex;
+}
+
 vec<ddd> NeuralNetwork::Run(vec<ddd> *input)
 {
 	return NetworkRunSum(*input, weights);
@@ -93,8 +161,8 @@ ddd NeuralNetwork::Learn(vec<ddd> input, vec<ddd> expectedOutput)
 	values[0] = input;
 	for (int i = 0; i < weights.size(); i++)
 	{
-		values[i+1] = weightedSums(values[i], weights[i]);
-		if (values[i+1].size() == 0)
+		values[i + 1] = weightedSums(values[i], weights[i]);
+		if (values[i + 1].size() == 0)
 		{
 			throw std::runtime_error("errored at: " + i);
 		}
@@ -140,66 +208,83 @@ ddd NeuralNetwork::Learn(vec<ddd> input, vec<ddd> expectedOutput)
 
 ddd NeuralNetwork::LearnGPU(vec<ddd> input, vec<ddd> expectedOutput, ddd learningRate)
 {
-	
 }
-size_t NeuralNetwork::SaveWeights(std::string filename) {
+size_t NeuralNetwork::SaveWeights(std::string filename)
+{
 	std::string size = "";
 	std::fstream stream(filename);
 	if (stream.is_open() == false)
 		throw std::invalid_argument("Couldnt load file into stream");
-	
-	size.append(std::to_string(weights.size()));
-	size.append(" ");
-	for (int i = 0; i < weights.size(); i++) {
-		size.append(std::to_string(weights[i].size()));
-		size.append(";");
-		for (int j = 0; j < weights[i].size(); j++) {
-			size.append(std::to_string(weights[i][j].size()));
-			size.append(":");
-			for (int k = 0; k < weights[i][j].size(); k++) {
-				size.append(std::to_string(weights[i][j][k]));
-				size.append(",");
+	for (int i = 0; i < weights.size(); i++)
+	{
+		for (int j = 0; j < weights[i].size(); j++)
+		{
+			for (int k = 0; k < weights[i][j].size(); k++)
+			{
+				size.append(DoubleToUnreadableString(&(weights[i][j][k])));
 			}
-			size.append(":");
 		}
-		size.append(";");
 	}
-	size.append(" ");
-	size.append(std::to_string(inputs));
 	std::string sizeSize = std::to_string(size.size());
+	sizeSize.append(std::to_string(weights.size()));
+	sizeSize.append(" ");
+	sizeSize.append(std::to_string(inputs));
+	for (int i = 0; i < weights.size(); i++)
+	{
+		sizeSize.append(" ");
+		sizeSize.append(std::to_string(weights[i].size()));
+	}
 	sizeSize.append("\n");
 	stream.write(sizeSize.data(), sizeSize.size());
 	stream.write(size.data(), size.size());
 	stream.close();
 	return size.size();
 }
-bool NeuralNetwork::LoadWeights(std::string filename) {
+bool NeuralNetwork::LoadWeights(std::string filename)
+{
 	std::ifstream stream(filename);
 	if (stream.is_open() == false)
 		throw std::invalid_argument("Couldnt load file into stream");
 	std::string size;
-	size.resize(128);
-	stream.getline(size.data(), 128, '\n');
+	size.resize(2048);
+	stream.getline(size.data(), 2048, '\n');
 	std::string main;
-	main.resize((long)std::strtod(size.data(), nullptr));
-	stream.getline(main.data(), main.size());
-	//from here, split into different parts
-	// " " | ";" | ":" | ","
-	vec<std::string> size_layer_input = split(main, ' ');
-	weights.resize(strtol(size_layer_input[0].data(), nullptr, 10));
-	inputs = std::strtol(size_layer_input[2].data(), nullptr, 10);
-	for (int i = 0; i < weights.size(); i++) {
-		vec<std::string> firstLayers = split(size_layer_input[1], ';');
-		weights[i].resize(std::strtol(firstLayers[i*2].data(), nullptr, 10));
-		for (int j = 0; j < weights[i].size(); i++) {
-			vec<std::string> secondLayers = split(firstLayers[i*2 + 1], ':');
-			weights[i][j].resize(std::strtol(secondLayers[j*2].data(), nullptr, 10));
-			vec<std::string> finalVals = split(secondLayers[j*2+1], ',');
-			for (int k = 0; k < weights[i][j].size(); k++) {
-				weights[i][j][k] = strtod(finalVals[k].data(), nullptr);
-			}
-		}
+	long lsize = 0;
+	vec<int> sizes = {};
+	long tmplyrSize = 0;
+	int i;
+	for (i = 0; i < size.size(); i++)
+	{
+		if (size[i] < '0' || size[i] > '9')
+			break;
+		lsize = lsize * 10 + (size[i] - '0');
 	}
-	//praying this works
+	for (i++; i < size.size(); i++)
+	{
+		if (size[i] < '0' || size[i] > '9')
+			break;
+		tmplyrSize = tmplyrSize * 10 + (size[i] - '0');
+	}
+	inputs = tmplyrSize;
+	tmplyrSize = 0;
+	for (i++; i < size.length(); i++)
+	{
+		if (size[i] < '0' || size[i] > '9')
+		{
+			if (tmplyrSize == 0)
+				continue;
+			sizes.push_back(tmplyrSize);
+			tmplyrSize = 0;
+			continue;
+		}
+		tmplyrSize = tmplyrSize * 10 + (size[i] - '0');
+	}
+	GenerateWeights(inputs, sizes);
+
+	main.resize(lsize + 1);
+	stream.read(main.data(), lsize);
+	vec<ddd> weightsAsArray = longUnreadableStringToArray(main);
+	SetWeightsFromArray(weightsAsArray);
+	// praying this works
 	return true;
 }

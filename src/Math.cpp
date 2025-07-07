@@ -49,7 +49,7 @@ size_t count(std::string str, vec<char> c)
 }
 vec<std::string> split(std::string str, char split)
 {
-    vec<std::string> ret(count(str, split));
+    vec<std::string> ret(count(str, split) + 1);
     int index = 0;
     int last = 0;
     for (int i = 0; i < str.size(); i++)
@@ -60,11 +60,12 @@ vec<std::string> split(std::string str, char split)
             last = i + 1;
         }
     }
+    ret[index] = str.substr(last, str.size() - 1 - last);
     return ret;
 }
 vec<std::string> split(std::string str, vec<char> split)
 {
-    vec<std::string> ret(count(str, split));
+    vec<std::string> ret(count(str, split) + 1);
     int index = 0;
     int last = 0;
     for (int i = 0; i < str.size(); i++)
@@ -75,6 +76,7 @@ vec<std::string> split(std::string str, vec<char> split)
             last = i + 1;
         }
     }
+    ret[index] = str.substr(last, str.size() - 1 - last);
     return ret;
 }
 vec<std::string> splitSkipN(std::string str, char c, int n)
@@ -153,23 +155,28 @@ vec<vec<ddd>> formatAUDUSDData(std::ifstream *stream, int maxlines)
     {
         ret[i] = formatSingleAUDUSDDatapointCurrent(str);
         i++;
-        if (maxlines != -1 && i > maxlines)
+        if (maxlines != -1 && i >= maxlines)
         {
             break;
         }
     }
     return ret;
 }
-vec<ddd> no_format_needed(vec<ddd> d, vec<ddd> last) {
-    return d;
+/// @brief for next prediction
+/// @param current the current datapoint
+/// @param next the next datapoint
+/// @return next
+/// @details this is a simple function that returns the next datapoint, for algorithms that predict based off previous datapoint(s)
+vec<ddd> no_format_needed(vec<ddd> current, vec<ddd> next) {
+    return next;
 }
 // high, low, close, volume -> high, low, close, volume (0->inf as 0->1), % change (as (halved)-1->1(doubled))
-vec<ddd> formatExpectedOutputAUDUSDCurrent(vec<ddd> current, vec<ddd> last) {
-    vec<ddd> ret(5);
+vec<ddd> formatExpectedOutputAUDUSDCurrent(vec<ddd> current, vec<ddd> next) {
     int size = current.size();
+    vec<ddd> ret(size + 1);
     if (ret.size() == size + 1)
         std::copy(current.begin(), current.end(), ret.begin());
-    ret[size] = current[size - 2] / last[size - 2] - 1;
+    ret[size] = current[size - 2] / next[size - 2] - 1;
     return ret;
 }
 ddd LossDerivative(ddd prediction, ddd expected)
@@ -464,6 +471,23 @@ ddd weightedSum(vec<ddd> outsideValues, vec<ddd> insideValues)
         sum += outsideValues[i] * insideValues[i + 1];
     }
     return sigmoid(sum);
+}
+
+std::string DoubleToUnreadableString(double *d) {
+    std::string str = "";
+    str.resize(sizeof(double));
+    for (int i = 0; i < sizeof(double) / sizeof(char); i++)
+        str[i] = ((unsigned char *)d)[i];
+    return str;
+}
+double UnreadableStringToDouble(std::string str) {
+    return *((double *)str.data());
+}
+vec<ddd> longUnreadableStringToArray(std::string s) {
+    vec<ddd> result(s.size()/sizeof(ddd));
+    for (size_t i = 0; i < s.size(); i += sizeof(ddd))
+        result[i/sizeof(ddd)] = UnreadableStringToDouble(s.substr(i, sizeof(ddd)));
+    return result;
 }
 vec<ddd> weightedSums(vec<ddd> outsideValues, vec<vec<ddd>> insideValues)
 {

@@ -1,7 +1,7 @@
 main = main.cpp
 dbgout = bin/dbg.out
 out = bin/main.out
-code = src/dataPuller.cpp src/Acceleration.cu src/NeuralNetwork.cpp src/NetworkTrainer.cpp src/Math.cpp
+code = src/Acceleration.cu src/NeuralNetwork.cpp src/NetworkTrainer.cpp src/Math.cpp
 
 all : runtest
 
@@ -16,3 +16,8 @@ rundebug :
 
 debugbuild :
 	nvcc -g -l curl $(main) $(code) -o $(dbgout)
+	
+runStreamTest : buildStreamTest
+	bin/streamtest.out
+buildStreamTest :
+	g++ tmp.cpp src/CommandPiper.cpp -o bin/streamtest.out

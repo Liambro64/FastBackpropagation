@@ -19,6 +19,8 @@ private:
 public:
 
 	ddd alpha = 0.01; //learning rate, default value
+	NeuralNetwork() {}
+	bool operator==(const NeuralNetwork& other);
 	//constructor
 	NeuralNetwork(int inputs, vec<int> layerSizes, ddd randFunc());
 	//destructor
@@ -33,6 +35,8 @@ public:
 	sptr<vec<vec<vec<ddd>>>> getWeights();
 	//function to calculate the output of the neural network given an input vector
 	vec<ddd> Run(vec<ddd> *input);
+	void GenerateWeights(int inputs, vec<int> layerSizes);
+	long SetWeightsFromArray(vec<ddd> weightsAsArray);
 	vec<ddd> RunGPU(vec<ddd> *input);
 	ddd Learn(vec<ddd> input, vec<ddd> expectedOutput);
 	ddd LearnGPU(vec<ddd> input, vec<ddd> expectedOutput, ddd learningRate);

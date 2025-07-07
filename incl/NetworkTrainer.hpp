@@ -17,6 +17,8 @@ public:
 	//returns a gradient of doubles which represents the error of the network over time
 	vec<ddd> Train(vec<ddd> (*formatExpectedOutput)(vec<ddd>, vec<ddd>), int epochs = 1000, double learningRate = 0.01, int datapoints = 1000, int printAfter = -1);
 	vec<ddd> TrainGPU(int epochs = 1000, double learningRate = 0.01, int datapoints = 1000, int printAfter = -1);
+	vec<ddd> Run(vec<ddd> (*formatExpectedOutput)(vec<ddd>, vec<ddd>), int datapoints);
+	NeuralNetwork getNetwork() {return network;}
 	vec<ddd> RunGPU(vec<ddd> *input) ;
 	size_t SaveWeights(std::string filename);
 	bool LoadWeights(std::string filename);

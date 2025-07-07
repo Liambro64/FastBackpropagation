@@ -14,11 +14,17 @@
 # include <thread>
 # include <filesystem>
 # include <cmath>
+# include <future>
+# include <ctime>
+# include <string>
+# include <stdio.h>
+# include <unistd.h>
 
 # define sptr std::shared_ptr
 # define vec std::vector
 # define ddd double
 # include "CudaFuncs.h"
+# include "incl/CommandPiper.hpp"
 # include "incl/Math.hpp"
 # include "incl/Acceleration.cuh"
 # include "incl/NeuralNetwork.hpp"
