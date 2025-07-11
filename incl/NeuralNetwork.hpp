@@ -39,7 +39,7 @@ public:
 	long SetWeightsFromArray(vec<ddd> weightsAsArray);
 	vec<ddd> RunGPU(vec<ddd> *input);
 	ddd Learn(vec<ddd> input, vec<ddd> expectedOutput);
-	ddd LearnGPU(vec<ddd> input, vec<ddd> expectedOutput, ddd learningRate);
+	//ddd LearnGPU(vec<ddd> input, vec<ddd> expectedOutput, ddd learningRate); not functional yet
 	size_t SaveWeights(std::string filename);
 	bool LoadWeights(std::string filename);
 };

@@ -31,7 +31,7 @@ void NeuralNetwork::InjectWeights(const vec<vec<vec<ddd>>> &extractedWeights)
 }
 bool NeuralNetwork::operator==(const NeuralNetwork &other)
 {
-	bool equal = true;// (inputs == other.inputs && weights == other.weights);
+	bool equal = true; // (inputs == other.inputs && weights == other.weights);
 	try
 	{
 		if (equal)
@@ -149,10 +149,10 @@ vec<ddd> NeuralNetwork::Run(vec<ddd> *input)
 {
 	return NetworkRunSum(*input, weights);
 }
-vec<ddd> NeuralNetwork::RunGPU(vec<ddd> *input)
-{
-	return FullRun(*input, weights)[weights.size() - 1];
-}
+// vec<ddd> NeuralNetwork::RunGPU(vec<ddd> *input)
+// {
+// 	return FullRun(*input, weights)[weights.size() - 1];
+// }
 ddd NeuralNetwork::Learn(vec<ddd> input, vec<ddd> expectedOutput)
 {
 	// run but keep the values
@@ -206,85 +206,105 @@ ddd NeuralNetwork::Learn(vec<ddd> input, vec<ddd> expectedOutput)
 	return loss;
 }
 
-ddd NeuralNetwork::LearnGPU(vec<ddd> input, vec<ddd> expectedOutput, ddd learningRate)
-{
-}
+// ddd NeuralNetwork::LearnGPU(vec<ddd> input, vec<ddd> expectedOutput, ddd learningRate)
+// {
+// }
 size_t NeuralNetwork::SaveWeights(std::string filename)
 {
-	std::string size = "";
-	std::fstream stream(filename);
-	if (stream.is_open() == false)
-		throw std::invalid_argument("Couldnt load file into stream");
-	for (int i = 0; i < weights.size(); i++)
+	try
 	{
-		for (int j = 0; j < weights[i].size(); j++)
+		std::string size = "";
+		std::fstream stream(filename);
+		if (stream.is_open() == false)
+			throw std::invalid_argument("Couldnt load file into stream");
+		for (int i = 0; i < weights.size(); i++)
 		{
-			for (int k = 0; k < weights[i][j].size(); k++)
+			for (int j = 0; j < weights[i].size(); j++)
 			{
-				size.append(DoubleToUnreadableString(&(weights[i][j][k])));
+				for (int k = 0; k < weights[i][j].size(); k++)
+				{
+					size.append(DoubleToUnreadableString(&(weights[i][j][k])));
+				}
 			}
 		}
-	}
-	std::string sizeSize = std::to_string(size.size());
-	sizeSize.append(std::to_string(weights.size()));
-	sizeSize.append(" ");
-	sizeSize.append(std::to_string(inputs));
-	for (int i = 0; i < weights.size(); i++)
-	{
+		std::string sizeSize = std::to_string(size.size());
+		sizeSize.append(std::to_string(weights.size()));
 		sizeSize.append(" ");
-		sizeSize.append(std::to_string(weights[i].size()));
+		sizeSize.append(std::to_string(inputs));
+		for (int i = 0; i < weights.size(); i++)
+		{
+			sizeSize.append(" ");
+			sizeSize.append(std::to_string(weights[i].size()));
+		}
+		sizeSize.append("\n");
+		stream.write(sizeSize.data(), sizeSize.size());
+		stream.write(size.data(), size.size());
+		stream.close();
+		return size.size();
 	}
-	sizeSize.append("\n");
-	stream.write(sizeSize.data(), sizeSize.size());
-	stream.write(size.data(), size.size());
-	stream.close();
-	return size.size();
+	catch (const std::exception &e)
+	{
+		std::cerr << "Error saving weights: " << e.what() << std::endl;
+		return -1;
+	}
+	return 0;
 }
 bool NeuralNetwork::LoadWeights(std::string filename)
 {
-	std::ifstream stream(filename);
-	if (stream.is_open() == false)
-		throw std::invalid_argument("Couldnt load file into stream");
-	std::string size;
-	size.resize(2048);
-	stream.getline(size.data(), 2048, '\n');
-	std::string main;
-	long lsize = 0;
-	vec<int> sizes = {};
-	long tmplyrSize = 0;
-	int i;
-	for (i = 0; i < size.size(); i++)
+	try
 	{
-		if (size[i] < '0' || size[i] > '9')
-			break;
-		lsize = lsize * 10 + (size[i] - '0');
-	}
-	for (i++; i < size.size(); i++)
-	{
-		if (size[i] < '0' || size[i] > '9')
-			break;
-		tmplyrSize = tmplyrSize * 10 + (size[i] - '0');
-	}
-	inputs = tmplyrSize;
-	tmplyrSize = 0;
-	for (i++; i < size.length(); i++)
-	{
-		if (size[i] < '0' || size[i] > '9')
+		std::ifstream stream(filename);
+		if (stream.is_open() == false)
 		{
-			if (tmplyrSize == 0)
-				continue;
-			sizes.push_back(tmplyrSize);
-			tmplyrSize = 0;
-			continue;
+			throw std::invalid_argument("Couldnt load file into stream");
 		}
-		tmplyrSize = tmplyrSize * 10 + (size[i] - '0');
-	}
-	GenerateWeights(inputs, sizes);
+		std::string size;
+		size.resize(2048);
+		stream.getline(size.data(), 2048, '\n');
+		std::string main;
+		long lsize = 0;
+		vec<int> sizes = {};
+		long tmplyrSize = 0;
+		int i;
+		for (i = 0; i < size.size(); i++)
+		{
+			if (size[i] < '0' || size[i] > '9')
+				break;
+			lsize = lsize * 10 + (size[i] - '0');
+		}
+		for (i++; i < size.size(); i++)
+		{
+			if (size[i] < '0' || size[i] > '9')
+				break;
+			tmplyrSize = tmplyrSize * 10 + (size[i] - '0');
+		}
+		inputs = tmplyrSize;
+		tmplyrSize = 0;
+		for (i++; i < size.length(); i++)
+		{
+			if (size[i] < '0' || size[i] > '9')
+			{
+				if (tmplyrSize == 0)
+					continue;
+				sizes.push_back(tmplyrSize);
+				tmplyrSize = 0;
+				continue;
+			}
+			tmplyrSize = tmplyrSize * 10 + (size[i] - '0');
+		}
+		GenerateWeights(inputs, sizes);
 
-	main.resize(lsize + 1);
-	stream.read(main.data(), lsize);
-	vec<ddd> weightsAsArray = longUnreadableStringToArray(main);
-	SetWeightsFromArray(weightsAsArray);
-	// praying this works
-	return true;
+		main.resize(lsize + 1);
+		stream.read(main.data(), lsize);
+		vec<ddd> weightsAsArray = longUnreadableStringToArray(main);
+		SetWeightsFromArray(weightsAsArray);
+		// praying this works
+		return true;
+	}
+	catch (const std::exception &e)
+	{
+		std::cerr << "Error loading weights: " << e.what() << std::endl;
+		return false;
+	}
+	return false;
 }

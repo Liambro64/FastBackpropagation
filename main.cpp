@@ -9,6 +9,7 @@ double randomFunc()
 }
 void NetworkTest()
 {
+	
 	vec<int> layers = {400, 250, 120, 40, 12, 6};
 	NeuralNetwork network = NeuralNetwork(8, layers, randomFunc);
 	vec<ddd> ins(4);
@@ -36,14 +37,14 @@ void smalltrainertest()
 }
 
 // not working
-void largeTrainertestGPU()
-{
-	vec<int> layers = {50, 125, 200, 345, 500, 415, 255, 135, 90, 60, 20, 1};
-	NetworkTrainer Trainer = NetworkTrainer(8, layers);
-	Trainer.Load("Data/Stock/AUDUSD/Data15M.csv", &formatAUDUSDData, 25600);
+// void largeTrainertestGPU()
+// {
+// 	vec<int> layers = {50, 125, 200, 345, 500, 415, 255, 135, 90, 60, 20, 1};
+// 	NetworkTrainer Trainer = NetworkTrainer(8, layers);
+// 	Trainer.Load("Data/Stock/AUDUSD/Data15M.csv", &formatAUDUSDData, 25600);
 
-	Trainer.TrainGPU(10, 0.4, 25000);
-}
+// 	Trainer.TrainGPU(10, 0.4, 25000);
+// }
 
 void largedatatrainertest()
 {
@@ -78,12 +79,17 @@ NetworkTrainer weightLoadCPUTest(int data = 50000)
 	std::cout << "Total Error: " << out[1] << ", \tAverage Error: " << out[0] << ", \tHighest error: " << out[2] << ", \tLowest error: " << out[3] << std::endl;
 	return Trainer;
 }
+
 int main()
 {
 	// TrainerTest();
 	// smalltrainertest();
-	auto Trainer1 = saveCPUTest(1000, 10);
-	auto Trainer2 = weightLoadCPUTest(1000);
+	// auto Trainer1 = saveCPUTest(1000, 10);
+	// auto Trainer2 = weightLoadCPUTest(1000);
+	DataStealer ds (nullptr);
+	CURLcode *ret = (CURLcode *)malloc(sizeof(CURLcode));
+	ds.ConnectToStream(ret, "cmd.txt");
+	std::cout << "if instantly, non-blocking, else blocking." << std::endl;
 	// largeTrainertestGPU();
 	return 0;
 }

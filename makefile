@@ -1,9 +1,12 @@
 main = main.cpp
 dbgout = bin/dbg.out
 out = bin/main.out
-code = src/Acceleration.cu src/NeuralNetwork.cpp src/NetworkTrainer.cpp src/Math.cpp
+code = src/Acceleration.cu src/NeuralNetwork.cpp src/NetworkTrainer.cpp src/Math.cpp src/DataStealer.cpp
 
 all : runtest
+
+dll :
+	g++ -shared -o bin/libNeuralNetwork.dll src/NeuralNetwork.cpp src/NetworkTrainer.cpp src/Math.cpp -fPIC
 
 runtest : buildtest
 	./$(out)

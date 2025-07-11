@@ -1,6 +1,7 @@
 #pragma once
 #ifndef PROJECT_HPP
 # define PROJECT_HPP
+//Please note although this imports cuda, all the GPU-related functions are not functional and are commented out.
 # include <cuda.h>
 # include <cuda_runtime.h>
 # include <vector>
@@ -19,12 +20,17 @@
 # include <string>
 # include <stdio.h>
 # include <unistd.h>
+# include <curl/curl.h>
+# include <regex>
+# include <signal.h>
+
+
 
 # define sptr std::shared_ptr
 # define vec std::vector
 # define ddd double
 # include "CudaFuncs.h"
-# include "incl/CommandPiper.hpp"
+# include "incl/DataStealer.hpp"
 # include "incl/Math.hpp"
 # include "incl/Acceleration.cuh"
 # include "incl/NeuralNetwork.hpp"
