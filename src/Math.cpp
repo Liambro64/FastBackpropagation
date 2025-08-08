@@ -247,8 +247,10 @@ vec<ddd> subtract(const vec<ddd> &v1, const vec<ddd> &v2)
     }
     return result;
 }
+
 ddd dot_product(const vec<ddd> &v1, const vec<ddd> &v2)
 {
+    
     if (v1.size() != v2.size())
     {
         // In a real implementation, handle errors properly
@@ -361,12 +363,12 @@ vec<ddd> vector_matrix_multiply(const vec<ddd> &vector, const vec<vec<ddd>> &mat
         std::cerr << "Error: Vector/matrix sizes do not match for vector-matrix multiply." << std::endl;
         return {};
     }
-    vec<ddd> result(matrix[0].size(), 0.0);
+    vec<ddd> result(matrix.size(), 0.0);
     for (size_t j = 0; j < matrix[0].size(); ++j)
     {
         for (size_t i = 0; i < matrix.size(); ++i)
         {
-            result[j] += vector[j] * matrix[i][j];
+            result[i] += vector[j] * matrix[i][j];
         }
     }
     return result;

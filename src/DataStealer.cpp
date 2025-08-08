@@ -1,5 +1,7 @@
 #include "../Project.hpp"
 
+//Do not use. I was using an exposed endpoint for data lol
+
 size_t base_callback(char *ptr, size_t size, size_t nmemb, void *userdata)
 {
 	std::string s(ptr, size * nmemb);

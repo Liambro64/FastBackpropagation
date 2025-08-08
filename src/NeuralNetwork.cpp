@@ -185,7 +185,7 @@ ddd NeuralNetwork::Learn(vec<ddd> input, vec<ddd> expectedOutput)
 		if (i != 0)
 		{
 			vec<ddd> err = vector_matrix_multiply(errVals[i], preTransposedWeights[i]);
-			for (int j = 0; j < weights[i].size(); j++)
+			for (int j = 0; j < weights[i - 1].size(); j++)
 			{
 				errVals[i - 1][j] = err[j] * sigmoidDerivative(values[i][j]);
 			}

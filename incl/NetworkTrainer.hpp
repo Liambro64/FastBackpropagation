@@ -16,6 +16,7 @@ public:
 	void Load(const std::string& fileName, vec<vec<ddd>> (*f)(std::ifstream *, int), int maxLines = -1);
 	//returns a gradient of doubles which represents the error of the network over time
 	vec<ddd> Train(vec<ddd> (*formatExpectedOutput)(vec<ddd>, vec<ddd>), int epochs = 1000, double learningRate = 0.01, int datapoints = 1000, int printAfter = -1);
+	vec<ddd> TrainOffFunctions(vec<ddd> (*input)(vec<ddd>), vec<ddd> (*output)(vec<ddd>), int epochs = 100, double learningRate = 0.0001, int datapoints = 1000000);
 	//vec<ddd> TrainGPU(int epochs = 1000, double learningRate = 0.01, int datapoints = 1000, int printAfter = -1);
 	vec<ddd> Run(vec<ddd> (*formatExpectedOutput)(vec<ddd>, vec<ddd>), int datapoints);
 	NeuralNetwork getNetwork() {return network;}

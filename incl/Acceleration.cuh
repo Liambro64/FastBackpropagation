@@ -3,7 +3,8 @@
 # define ACCELERATION_CUH
 
 # include "../Project.hpp"
-extern "C" vec<ddd> weightedSumsWp(vec<ddd> outsideValues, vec<vec<ddd>> insideValues);
-extern "C" vec<vec<ddd>> FullRun(vec<ddd> input, vec<vec<vec<ddd>>> weights);
+extern "C" int FullRun(vec<ddd> input, vec<vec<vec<ddd>>> weights);
+
+extern "C" vec<vec<ddd>> optest(vec<ddd> input, vec<ddd> input2);
 
 #endif

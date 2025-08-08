@@ -150,6 +150,42 @@ vec<ddd> NetworkTrainer::Train(vec<ddd> (*formatExpectedOutput)(vec<ddd>, vec<dd
 	return errorGradientVector;
 }
 
+vec<ddd> NetworkTrainer::TrainOffFunctions(vec<ddd> (*input)(vec<ddd>), vec<ddd> (*output)(vec<ddd>), int epochs, ddd learningRate, int datapoints)
+{
+	network.alpha = learningRate;
+	std::cout << "Training network with " << epochs << " epochs and learning rate " << network.alpha << " and a data size of " << datapoints << std::endl
+			  << std::endl
+			  << std::endl
+			  << std::endl;
+	vec<ddd> errorGradientVector(0);
+	for (int epoch = 0; epoch < epochs; epoch++)
+	{
+		double err = 0;
+		std::cout << "Epoch " << epoch + 1 << "/" << epochs << std::endl
+				  << std::endl
+				  << std::endl;
+		double lastError = 0;
+		for (int i = 0; i < datapoints; i++)
+		{
+			vec<ddd> position(this->inputs);
+			for (int j = 0; j < position.size(); j++)
+			{
+				position[j] = randD();
+			}
+			vec<ddd> inputs = input(position);
+			vec<ddd> expectedOut = output(position);
+			err += network.Learn(inputs, expectedOut);
+			// std::cout << "Current Error: " << currentError << " for datapoint " << i << " for epoch " << epoch+1 << std::endl;
+			
+		}
+		err /= datapoints;
+		std::cout << "\x1b[1F\x1b[2K\x1b[1F\x1b[2K\x1b[1F\x1b[2K" << "Epoch " << epoch + 1 << "/" << epochs << " complete, Average Error: " << err << std::endl;
+		errorGradientVector.push_back(err);
+	}
+	return errorGradientVector;
+}
+
+
 // vec<ddd> NetworkTrainer::TrainGPU(int epochs, ddd learningRate, int datapoints, int printAfter)
 // {
 // 	if (data.empty() || data.size() < datapoints)

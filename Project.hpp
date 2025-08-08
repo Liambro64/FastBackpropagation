@@ -30,7 +30,6 @@
 # define vec std::vector
 # define ddd double
 # include "CudaFuncs.h"
-# include "incl/DataStealer.hpp"
 # include "incl/Math.hpp"
 # include "incl/Acceleration.cuh"
 # include "incl/NeuralNetwork.hpp"

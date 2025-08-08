@@ -67,6 +67,15 @@ NetworkTrainer saveCPUTest(int data = 50000, int epochs = 20)
 	Trainer.SaveWeights("WeightsSaves/WeightsRCT.fbp");
 	return Trainer;
 }
+NetworkTrainer CPULoadTest(int data = 50000, int epochs = 25, vec<int> layers = {500, 200, 70, 30, 5}, int printafter = 25)
+{
+	int inputs = 20;
+	int nextPo2 = (int)std::pow(2, std::ceil(std::log2(data)) + 1);
+	NetworkTrainer Trainer = NetworkTrainer(inputs, layers);
+	Trainer.Load("Data/Stock/AUDUSD/Data15M.csv", &formatAUDUSDData, nextPo2);
+	Trainer.Train(&formatExpectedOutputAUDUSDCurrent, epochs, 0.02, data, printafter);
+	return Trainer;
+}
 NetworkTrainer weightLoadCPUTest(int data = 50000)
 {
 	vec<int> layers = {350, 200, 135, 90, 60, 20, 5};
@@ -80,16 +89,60 @@ NetworkTrainer weightLoadCPUTest(int data = 50000)
 	return Trainer;
 }
 
+vec<ddd> makeInput(vec<ddd> input)
+{
+	return input;
+}
+vec<ddd> makeOutput(vec<ddd> input)
+{
+	vec<ddd> output = {input[0], input[0], input[0]};
+	return output;
+}
+
+
+NetworkTrainer TrainOffFunctionsTest(int inputs = 2, int data = 20000, int epochs = 250, vec<int> layers = {5, 7, 10, 13, 18, 26, 34, 21, 13, 7, 5, 3})
+{
+	int nextPo2 = (int)std::pow(2, std::ceil(std::log2(data)) + 1);
+	NetworkTrainer Trainer = NetworkTrainer(inputs, layers);
+	Trainer.TrainOffFunctions(&makeInput, &makeOutput, epochs, 0.00001, data);
+	return Trainer;
+}
+
+// vec<vec<ddd>> optester() {
+// 	size_t v1size = 1000;
+// 	size_t v2size = 1000;
+// 	vec<ddd> in(v1size);
+// 	vec<ddd> in2(v2size);
+// 	for (size_t i = 0; i < v1size; i++)
+// 		in[i] = randomFunc();
+// 	for (size_t i = 0; i < v2size; i++)
+// 		in2[i] = randomFunc();
+// 	auto out = optest(in, in2);
+// 	vec<vec<ddd>> out2(v1size, vec<ddd>(v2size));
+// 	for (size_t i = 0; i < out.size(); i++)
+// 	{
+// 		for (size_t j = 0; j < out[i].size(); j++)
+// 		{
+// 			out2[i][j] = in[i] * in2[j];
+// 			if (out2[i][j] != out[i][j])
+// 			{
+// 				std::cerr << "Error at " << i << ", " << j << ": " << out2[i][j] << " != " << out[i][j] << std::endl;
+// 				return {};
+// 			}
+// 		}
+// 	}
+
+// 	return out;
+// }
+
 int main()
 {
 	// TrainerTest();
 	// smalltrainertest();
-	// auto Trainer1 = saveCPUTest(1000, 10);
+	//auto functionTrainer = TrainOffFunctionsTest();
+	//optester();
+	auto Trainer1 = CPULoadTest(5000, 25, {200, 100, 50, 20, 5}, 250);
 	// auto Trainer2 = weightLoadCPUTest(1000);
-	DataStealer ds (nullptr);
-	CURLcode *ret = (CURLcode *)malloc(sizeof(CURLcode));
-	ds.ConnectToStream(ret, "cmd.txt");
-	std::cout << "if instantly, non-blocking, else blocking." << std::endl;
 	// largeTrainertestGPU();
 	return 0;
 }

@@ -2,196 +2,282 @@
 #include <cuda.h>
 #include <cuda_runtime.h>
 
-extern "C" __global__ void outerProductGPU(double **to, double *a, double *b, int asize, int bsize)
+extern "C" __global__ void outer_product(double *result, size_t resultPitch, double *v1, double *v2, size_t v1size, size_t v2size)
 {
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx < asize)
-		for (int j = 0; j < bsize; ++j)
-			to[idx][j] = a[idx] * b[j];
-}
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-extern "C" __global__ void vectorMatrixMultiplyGPU(ddd *to, ddd *vector, ddd *matrix, int vectorSize, int matrixRows, int numpitch)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx < vectorSize)
+	if (i < v1size && j < v2size)
 	{
-		matrix += idx; // Adjust pointer to the correct column
-		ddd sum = 0.0;
-		for (int i = 0; i < matrixRows; i++)
-		{
-			sum += vector[idx] * matrix[i * numpitch];
-		}
-		to[idx] = sum;
+		result[i * resultPitch + j] = v1[i] * v2[j];
 	}
 }
 
-extern "C" __global__ void weightedSumGPU(ddd *to, ddd *outsideValues, ddd *insideValues, int outsideSize, int insideSize, int numpitch)
+extern "C" __global__ void NetworkSum(double *result, double *input, double *weights, size_t inputSize, size_t neurons)
 {
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	if (idx < insideSize)
+	int neuron = blockIdx.x * blockDim.x + threadIdx.x;
+	for (int i = 0; i < inputSize; i++)
 	{
-		insideValues += idx * numpitch; // Adjust pointer to the correct row
-		ddd sum = insideValues[0];		// Start with the bias
-		for (int i = 0; i < outsideSize; i++)
+		if (neuron < neurons)
 		{
-			sum += outsideValues[i] * insideValues[i + 1];
+			result[neuron] += input[i] * weights[neuron * inputSize + i + 1];
 		}
-		to[idx] = 1 / (1 + exp(-sum));
 	}
+	result[neuron] += weights[neuron * inputSize]; // bias term
 }
-
-extern "C" __global__ void weightedSumGPUInside(ddd *to, ddd *outsideValues, ddd **ptrs, int ptrIndex, int outsideSize, int insideSize, int numpitch)
-{
-	int idx = blockIdx.x * blockDim.x + threadIdx.x;
-	double *insideValues = ptrs[ptrIndex]; // Get the pointer to the inside values for this index
-	if (idx < insideSize)
-	{
-		insideValues += idx * numpitch; // Adjust pointer to the correct row
-		ddd sum = insideValues[0];		// Start with the bias
-		for (int i = 0; i < outsideSize; i++)
-		{
-			sum += outsideValues[i] * insideValues[i + 1];
-		}
-		to[idx] = 1 / (1 + exp(-sum));
-	}
-}
-// extern "C" __global__ void vectorSum(int *to, int **from, int size) {
-//     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-
-//     if (idx < size) {
-//         int *current_from_array = from[idx];
-
-//         // Ensure the pointer is not null before dereferencing
-//         if (current_from_array != nullptr) {
-//             int num_elements_to_sum = current_from_array[0];
-//             int current_sum = 0;
-
-//             // Sum elements from current_from_array[1] to current_from_array[num_elements_to_sum]
-//             for (int j = 1; j <= num_elements_to_sum; j++) {
-//                 current_sum += current_from_array[j];
-//             }
-//             to[idx] = current_sum;
-//         }
-//     }
-// }
-
-// namespace Wrapper{
-
-// void VSWrapper(int *to, int **from, int size) {
-//     // Define the number of threads and blocks
-//     int threadsPerBlock = 256;
-//     int blocksPerGrid = (size + threadsPerBlock - 1) / threadsPerBlock;
-
-//     // Launch the kernel
-//     vectorSum<<<blocksPerGrid, threadsPerBlock>>>(to, from, size);
-//     // Check for errors in kernel launch (optional)
-//     cudaError_t err = cudaGetLastError();
-//     if (err != cudaSuccess) {
-//         fprintf(stderr, "CUDA error: %s\n", cudaGetErrorString(err));
-//     }
-// 	err = cudaDeviceSynchronize(); // Wait for kernel to complete
-//     if (err != cudaSuccess) {
-//         fprintf(stderr, "CUDA error: %s\n", cudaGetErrorString(err));
-//     }
-// }
-// }
 
 // should be a wrapper functuon to run multiple weighted sums in parallel
-extern "C" vec<ddd> weightedSumsWp(vec<ddd> outsideValues, vec<vec<ddd>> insideValues)
+// extern "C" vec<ddd> weightedSumsWp(vec<ddd> outsideValues, vec<vec<ddd>> insideValues)
+// {
+// 	double *h_insides = new double [insideValues.size() * insideValues[0].size()];
+// 	for (size_t i = 0; i < insideValues.size(); ++i)
+// 	{
+// 		for (size_t j = 0; j < insideValues[i].size(); ++j)
+// 		{
+// 			h_insides[i * insideValues[0].size() + j] = insideValues[i][j];
+// 		}
+// 	}
+// 	double *d_outsideValues;
+// 	double *d_insideValues;
+// 	double *returnVals;
+// 	size_t pitch;
+// 	// allocate and copy inside values to device
+// 	if (cudaMalloc(&d_outsideValues, outsideValues.size() * sizeof(double)) != CUDA_SUCCESS)
+// 		std::cout << "Failed to alloc 1" << std::endl;
+
+// 	if (cudaMemcpy(d_outsideValues, outsideValues.data(), outsideValues.size() * sizeof(double), cudaMemcpyHostToDevice) != CUDA_SUCCESS)
+// 		std::cout << "Failed to copy 1" << std::endl;
+
+// 	cudaMallocPitch(&d_insideValues, &pitch, sizeof(double) * insideValues[0].size(), insideValues.size());
+
+// 	if (cudaMemcpy2D(d_insideValues, pitch, h_insides, insideValues[0].size() * sizeof(ddd),
+// 					 insideValues[0].size() * sizeof(ddd), insideValues.size(), cudaMemcpyHostToDevice) != CUDA_SUCCESS)
+// 		std::cout << "Failed to copy 2" << std::endl;
+// 	if (cudaMalloc(&returnVals, insideValues.size() * sizeof(double)) != CUDA_SUCCESS)
+// 		std::cout << "Failed to alloc 3" << std::endl;
+// 	int isize = insideValues.size();
+// 	int osize = outsideValues.size();
+// 	int threadsPerBlock = 256;
+// 	int blocksPerGrid = (insideValues.size() + threadsPerBlock - 1) / threadsPerBlock;
+// 	dim3 blockSize = dim3(threadsPerBlock, 1, 1);
+// 	dim3 gridSize = dim3(blocksPerGrid, 1, 1);
+// 	weightedSumGPU<<<gridSize, blockSize>>>((double *)returnVals, (double *)d_outsideValues, d_insideValues, osize, isize, pitch / sizeof(double));
+
+// 	cudaDeviceSynchronize();
+
+// 	vec<ddd> result(insideValues.size());
+// 	cudaMemcpy(result.data(), returnVals, insideValues.size() * sizeof(ddd), cudaMemcpyDeviceToHost);
+
+// 	delete h_insides;
+// 	return result;
+// }
+
+extern "C" vec<ddd> RunNetwork(vec<ddd> input, vec<vec<vec<ddd>>> weights)
 {
-	double *h_insides = new double [insideValues.size() * insideValues[0].size()];
-	for (size_t i = 0; i < insideValues.size(); ++i)
+	unsigned int bpd = sizeof(double); // bytes per double
+	unsigned long inputSize = input.size();
+	vec<int> allSizes;
+	unsigned long totalSize = 0;
+	unsigned long biggestLayer = inputSize;
+	allSizes.resize(weights.size());
+	for (int i = 0; i < weights.size(); i++)
 	{
-		for (size_t j = 0; j < insideValues[i].size(); ++j)
+		allSizes[i] = weights[i][0].size();
+		totalSize += allSizes[i];
+		if (allSizes[i] > biggestLayer)
 		{
-			h_insides[i * insideValues[0].size() + j] = insideValues[i][j];
+			biggestLayer = allSizes[i];
 		}
 	}
-	double *d_outsideValues;
-	double *d_insideValues;
-	double *returnVals;
-	size_t pitch;
-	// allocate and copy inside values to device
-	if (cudaMalloc(&d_outsideValues, outsideValues.size() * sizeof(double)) != CUDA_SUCCESS)
-		std::cout << "Failed to alloc 1" << std::endl;
-
-	if (cudaMemcpy(d_outsideValues, outsideValues.data(), outsideValues.size() * sizeof(double), cudaMemcpyHostToDevice) != CUDA_SUCCESS)
-		std::cout << "Failed to copy 1" << std::endl;
-	if (cudaMallocPitch(&d_insideValues, &pitch, sizeof(double) * insideValues[0].size(), insideValues.size()) != CUDA_SUCCESS)
-		std::cout << "Failed to alloc 2 (pitch)" << std::endl;
-	if (cudaMemcpy2D(d_insideValues, pitch, h_insides, insideValues[0].size() * sizeof(ddd),
-					 insideValues[0].size() * sizeof(ddd), insideValues.size(), cudaMemcpyHostToDevice) != CUDA_SUCCESS)
-		std::cout << "Failed to copy 2" << std::endl;
-	if (cudaMalloc(&returnVals, insideValues.size() * sizeof(double)) != CUDA_SUCCESS)
-		std::cout << "Failed to alloc 3" << std::endl;
-	int isize = insideValues.size();
-	int osize = outsideValues.size();
-	int threadsPerBlock = 256;
-	int blocksPerGrid = (insideValues.size() + threadsPerBlock - 1) / threadsPerBlock;
-	dim3 blockSize = dim3(threadsPerBlock, 1, 1);
-	dim3 gridSize = dim3(blocksPerGrid, 1, 1);
-	weightedSumGPU<<<gridSize, blockSize>>>((double *)returnVals, (double *)d_outsideValues, d_insideValues, osize, isize, pitch / sizeof(double));
-
-	cudaDeviceSynchronize();
-
-	vec<ddd> result(insideValues.size());
-	cudaMemcpy(result.data(), returnVals, insideValues.size() * sizeof(ddd), cudaMemcpyDeviceToHost);
-
-	delete h_insides;
-	return result;
-}
-
-extern "C" vec<vec<ddd>> FullRun(vec<ddd> input, vec<vec<vec<ddd>>> weights) {
-	// input is a vector of doubles
-	// weights is a vector of matrices, each matrix is a vector of vectors of doubles
-	size_t size = 0;
-	vec<size_t> sizes(weights.size());
-	for (int i = 0; i < weights.size(); i++) {
-		sizes[i] = weights[i].size() * weights[i][0].size();
-		size += sizes[i] * sizeof(double);
+	unsigned long bytesize = 0;
+	for (int i = 0; i < allSizes.size(); i++)
+	{
+		bytesize += (allSizes[i] * ((i == 0 ? inputSize : allSizes[i - 1]) + 1));
 	}
-	double *h_flatweights = new double[size];
-	int i = 0;
-	for (int j = 0; j < weights.size(); j++) {
-		for (int k = 0; k < weights[j].size(); k++) {
-			for (int l = 0; l < weights[j][k].size(); l++) {
-				h_flatweights[i++] = weights[j][k][l];
+	bytesize *= bpd;
+	double *host_weights = (double *)malloc(bytesize);
+	double *host_input = (double *)malloc(inputSize * bpd);
+
+	double *dev_weights;
+	double *dev_input;
+	double *dev_output;
+	unsigned long count = 0;
+	// flatten the weights.
+	for (int i = 0; i < weights.size(); i++)
+	{
+		for (int j = 0; j < weights[i].size(); j++)
+		{
+			for (int k = 0; k < weights[i][j].size(); k++)
+			{
+				host_weights[count++] = weights[i][j][k];
 			}
 		}
 	}
-	// this is an array (on the host) of pointers (on the device) to the weights
-	double **d_weights = new double *[weights.size()];
-	//this is for the array of pointers after its copied on the device
-	double **d_weights_pointers;
-	//the inputs on the device
-	double *d_input;
-	//the return value (on the device) but also reused as the input layer
-	double *d_returnVals;
-
-	size_t maxInputSize = MAX(max(sizes), input.size());
-
-	size_t *pitches = new size_t[weights.size()];
-	for (int i = 0; i < weights.size(); i++) {
-		cudaMallocPitch(&(d_weights[i]), &(pitches[i]), weights[i][0].size() * sizeof(double), weights[i].size());
-		cudaMemcpy2D(d_weights[i], pitches[i], h_flatweights + sumFor(sizes, i), weights[i][0].size() * sizeof(double),
-				 weights[i][0].size() * sizeof(double), weights[i].size(), cudaMemcpyHostToDevice);
+	// make sure input is usable with cuda
+	for (int i = 0; i < inputSize; i++)
+	{
+		host_input[i] = input[i];
 	}
-	cudaMalloc(&(d_weights_pointers), weights.size() * sizeof(double *));
-	cudaMemcpy(d_weights_pointers, d_weights, weights.size() * sizeof(double *), cudaMemcpyHostToDevice);
-	cudaMalloc(&d_input, maxInputSize * sizeof(double));
-	cudaMemcpy(d_input, input.data(), input.size() * sizeof(double), cudaMemcpyHostToDevice);
-	cudaMalloc(&d_returnVals, maxInputSize * sizeof(double));
-	int threadsPerBlock = 256;
-	vec<vec<ddd>> returnVals(weights.size());
-	for (int i = 0; i < weights.size(); i++) {
-		returnVals[i].resize(weights[i].size());
-		dim3 block = dim3(threadsPerBlock, 1, 1);
-		dim3 grid = dim3(((i == 0 ? input.size() : weights[i - 1].size()) + threadsPerBlock - 1) / threadsPerBlock, 1, 1);
-		weightedSumGPUInside<<<block, grid>>>(d_returnVals, d_input, d_weights_pointers, i, i == 0 ? input.size() : sizes[i - 1], weights[i].size(), pitches[i] / sizeof(double));
+
+	if (cudaMalloc(&dev_weights, bytesize) != cudaError_t::cudaSuccess)
+	{
+		std::cerr << "Failed to allocate device memory for weights." << std::endl;
+		free(host_weights);
+		free(host_input);
+	}
+	if (cudaMemcpy(dev_weights, host_weights, bytesize, cudaMemcpyHostToDevice) != cudaError_t::cudaSuccess)
+	{
+		std::cerr << "Failed to copy weights to device." << std::endl;
+		free(host_weights);
+		free(host_input);
+		cudaFree(dev_weights);
+	}
+	if (cudaMalloc(&dev_input, biggestLayer * bpd) != cudaError_t::cudaSuccess)
+	{
+		std::cerr << "Failed to allocate device memory for input." << std::endl;
+		free(host_weights);
+		free(host_input);
+		cudaFree(dev_weights);
+	}
+	if (cudaMemcpy(dev_input, host_input, inputSize * bpd, cudaMemcpyHostToDevice) != cudaError_t::cudaSuccess)
+	{
+		std::cerr << "Failed to copy input to device." << std::endl;
+		free(host_weights);
+		free(host_input);
+		cudaFree(dev_weights);
+		cudaFree(dev_input);
+	}
+	if (cudaMalloc(&dev_output, biggestLayer * bpd) != cudaError_t::cudaSuccess)
+	{
+		std::cerr << "Failed to allocate device memory for output." << std::endl;
+		free(host_weights);
+		free(host_input);
+		cudaFree(dev_weights);
+		cudaFree(dev_input);
+	}
+	size_t offset = 0;
+	for (int i = 0; i < allSizes.size(); i++)
+	{
+		dim3 blockSize = dim3(64, 1, 1);
+		dim3 gridSize = dim3((allSizes[i] + blockSize.x - 1) / blockSize.x, 1, 1);
+		NetworkSum<<<gridSize, blockSize>>>(dev_output, dev_input, dev_weights + offset, i == 0 ? inputSize : allSizes[i - 1], allSizes[i]);
 		cudaDeviceSynchronize();
-		cudaMemcpy(returnVals[i].data(), d_returnVals, weights[i].size() * sizeof(double), cudaMemcpyDeviceToHost);
-		cudaMemcpy(d_input, d_returnVals, weights[i].size() * sizeof(double), cudaMemcpyDeviceToDevice);
+		offset += (allSizes[i] * ((i == 0 ? inputSize : allSizes[i - 1]) + 1));
+		if (i < allSizes.size() - 1)
+		{
+			if (cudaMemcpy(dev_input, dev_output, allSizes[i] * bpd, cudaMemcpyDeviceToDevice) != cudaError_t::cudaSuccess)
+			{
+				std::cerr << "Failed to copy output to input." << std::endl;
+				free(host_weights);
+				free(host_input);
+				cudaFree(dev_weights);
+				cudaFree(dev_input);
+				cudaFree(dev_output);
+			}
+		}
+	}
+	double *host_output = (double *)malloc(allSizes[allSizes.size() - 1] * bpd);
+	cudaMemcpy(host_output, dev_output, allSizes[allSizes.size() - 1] * bpd, cudaMemcpyDeviceToHost);
+	vec<ddd> result;
+	result.resize(allSizes[allSizes.size() - 1]);
+	for (int i = 0; i < allSizes[allSizes.size() - 1]; i++)
+	{
+		result[i] = host_output[i];
+	}
+	free(host_weights);
+	free(host_input);
+	free(host_output);
+	cudaFree(dev_weights);
+	cudaFree(dev_input);
+	cudaFree(dev_output);
+	return result;
+}
+
+extern "C" vec<vec<ddd>> optest(vec<ddd> input, vec<ddd> input2)
+{
+	vec<vec<ddd>> result(input.size(), vec<ddd>(input2.size(), 0.0));
+	ddd *h_v1 = input.data();
+	ddd *h_v2 = input2.data();
+	ddd *h_result;
+
+	ddd *d_v1;
+	ddd *d_v2;
+	ddd *d_result_pitched;
+	size_t result_pitch;
+	size_t v1size = input.size();
+	size_t v2size = input2.size();
+
+	h_result = new ddd[v1size * v2size];
+
+	if (cudaMalloc(&d_v1, v1size * sizeof(ddd)) != cudaError_t::cudaSuccess)
+	{
+		std::cerr << "Failed to allocate device memory for v1." << std::endl;
+		return result;
+	}
+	if (cudaMemcpy(d_v1, h_v1, v1size * sizeof(ddd), cudaMemcpyHostToDevice) != cudaError_t::cudaSuccess)
+	{
+		std::cerr << "Failed to copy v1 to device." << std::endl;
+		cudaFree(d_v1);
+		return result;
+	}
+	if (cudaMalloc(&d_v2, v2size * sizeof(ddd)) != cudaError_t::cudaSuccess)
+	{
+		std::cerr << "Failed to allocate device memory for v2." << std::endl;
+		cudaFree(d_v1);
+		return result;
+	}
+	if (cudaMemcpy(d_v2, h_v2, v2size * sizeof(ddd), cudaMemcpyHostToDevice) != cudaError_t::cudaSuccess)
+	{
+		std::cerr << "Failed to copy v2 to device." << std::endl;
+		cudaFree(d_v1);
+		cudaFree(d_v2);
+		return result;
+	}
+	if (cudaMallocPitch(&d_result_pitched, &result_pitch, v1size * sizeof(ddd), v2size) != cudaError_t::cudaSuccess)
+	{
+		std::cerr << "Failed to allocate device memory for result." << std::endl;
+		cudaFree(d_v1);
+		cudaFree(d_v2);
+		return result;
+	}
+	dim3 blockSize = dim3(64, 64, 1);
+	dim3 gridSize = dim3((v1size + blockSize.x - 1) / blockSize.x, (v2size + blockSize.y - 1) / blockSize.y, 1);
+	outer_product<<<gridSize, blockSize>>>(d_result_pitched, result_pitch / sizeof(ddd), d_v1, d_v2, v1size, v2size);
+
+	if (cudaDeviceSynchronize() != cudaError_t::cudaSuccess)
+	{
+		std::cerr << "Failed to synchronize device after kernel launch." << std::endl;
+		cudaFree(d_v1);
+		cudaFree(d_v2);
+		cudaFree(d_result_pitched);
+		return result;
 	}
 
-	return returnVals;
+	if (cudaMemcpy2D(h_result, v1size * sizeof(ddd), d_result_pitched, result_pitch, v1size * sizeof(ddd), v2size, cudaMemcpyDeviceToHost) != cudaError_t::cudaSuccess)
+	{
+		std::cerr << "Failed to copy result back to host." << std::endl;
+		cudaFree(d_v1);
+		cudaFree(d_v2);
+		cudaFree(d_result_pitched);
+		return result;
+	}
+
+	for (size_t i = 0; i < v1size; i++)
+	{
+		for (size_t j = 0; j < v2size; j++)
+		{
+			result[i][j] = h_result[i * v2size + j];
+		}
+	}
+	cudaFree(d_v1);
+	cudaFree(d_v2);
+	cudaFree(d_result_pitched);
+	free(h_result);
+	return result;
+}
+
+extern "C" int FullLearn(vec<ddd> input, vec<vec<vec<ddd>>> weights)
+{
+	// input is a vector of doubles
+	return 0;
 }
