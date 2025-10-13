@@ -3,7 +3,7 @@ ddd LossFunction(ddd prediction, ddd expected, int size)
 {
     return (prediction - expected) * (prediction - expected);
 }
-ddd LossFunction(vec<ddd> prediction, vec<ddd> expected)
+ddd LossFunction(std::vector<ddd> prediction, std::vector<ddd> expected)
 {
     auto error = subtract(prediction, expected);
     ddd sum = 0;
@@ -13,11 +13,14 @@ ddd LossFunction(vec<ddd> prediction, vec<ddd> expected)
     }
     return (sum) / error.size();
 }
-
-ddd inverseDecimal(ddd d) {
-    return ((double)1) - abs(d);
+ddd LossDerivative(ddd prediction, ddd expected)
+{
+    return 2 * (prediction - expected);
 }
-bool compare (char c, vec<char> cs) {
+ddd inverseDecimal(ddd d) {
+    return ((ddd)1) - abs(d);
+}
+bool compare (char c, std::vector<char> cs) {
     for (int i = 0; i < cs.size(); i++) {
         if (c == cs[i])
             return true;
@@ -34,7 +37,7 @@ size_t count(std::string str, char c)
     }
     return i;
 }
-size_t count(std::string str, vec<char> c)
+size_t count(std::string str, std::vector<char> c)
 {
     size_t i = 0;
     for (int j = 0; j < str.size(); j++)
@@ -47,9 +50,9 @@ size_t count(std::string str, vec<char> c)
     }
     return i;
 }
-vec<std::string> split(std::string str, char split)
+std::vector<std::string> split(std::string str, char split)
 {
-    vec<std::string> ret(count(str, split) + 1);
+    std::vector<std::string> ret(count(str, split) + 1);
     int index = 0;
     int last = 0;
     for (int i = 0; i < str.size(); i++)
@@ -63,9 +66,9 @@ vec<std::string> split(std::string str, char split)
     ret[index] = str.substr(last, str.size() - 1 - last);
     return ret;
 }
-vec<std::string> split(std::string str, vec<char> split)
+std::vector<std::string> split(std::string str, std::vector<char> split)
 {
-    vec<std::string> ret(count(str, split) + 1);
+    std::vector<std::string> ret(count(str, split) + 1);
     int index = 0;
     int last = 0;
     for (int i = 0; i < str.size(); i++)
@@ -79,9 +82,9 @@ vec<std::string> split(std::string str, vec<char> split)
     ret[index] = str.substr(last, str.size() - 1 - last);
     return ret;
 }
-vec<std::string> splitSkipN(std::string str, char c, int n)
+std::vector<std::string> splitSkipN(std::string str, char c, int n)
 {
-    vec<std::string> ret(count(str, c));
+    std::vector<std::string> ret(count(str, c));
     int index = -n;
     int last = 0;
     for (int i = 0; i < str.size(); i++)
@@ -102,9 +105,9 @@ vec<std::string> splitSkipN(std::string str, char c, int n)
     }
     return ret;
 }
-vec<std::string> splitSkipN(std::string str, vec<char> split, int n)
+std::vector<std::string> splitSkipN(std::string str, std::vector<char> split, int n)
 {
-    vec<std::string> ret(count(str, split) - n);
+    std::vector<std::string> ret(count(str, split) - n);
     int index = -n;
     int last = 0;
     for (int i = 0; i < str.size(); i++)
@@ -125,18 +128,18 @@ vec<std::string> splitSkipN(std::string str, vec<char> split, int n)
     }
     return ret;
 }
-vec<ddd> formatSingleAUDUSDDatapoint(std::string line)
+std::vector<ddd> formatSingleAUDUSDDatapoint(std::string line)
 {
-    vec<std::string> splittedstr = splitSkipN(line, '	', 1);
-    vec<ddd> ret(splittedstr.size());
+    std::vector<std::string> splittedstr = splitSkipN(line, '	', 1);
+    std::vector<ddd> ret(splittedstr.size());
     for (int i = 0; i < splittedstr.size(); i++)
         ret[i] = std::strtod(&(splittedstr[i][0]), nullptr);
     return ret;
 }
-vec<ddd> formatSingleAUDUSDDatapointCurrent(std::string line)
+std::vector<ddd> formatSingleAUDUSDDatapointCurrent(std::string line)
 {
-    vec<std::string> splittedstr = splitSkipN(line, {'\t', '\r'}, 2);
-    vec<ddd> ret(splittedstr.size());
+    std::vector<std::string> splittedstr = splitSkipN(line, {'\t', '\r'}, 2);
+    std::vector<ddd> ret(splittedstr.size());
     for (int i = 0; i < splittedstr.size(); i++)
         ret[i] = std::strtod(&(splittedstr[i][0]), nullptr);
     ret[ret.size() - 1] = inverseDecimal(1/ret[ret.size() - 1]);
@@ -146,9 +149,9 @@ vec<ddd> formatSingleAUDUSDDatapointCurrent(std::string line)
 // date time \t open \t high \t low \t close \t volume
 // to:
 // high, low, close, volume
-vec<vec<ddd>> formatAUDUSDData(std::ifstream *stream, int maxlines)
+std::vector<std::vector<ddd>> formatAUDUSDData(std::ifstream *stream, int maxlines)
 {
-    vec<vec<ddd>> ret(maxlines == -1 ? 200000 : maxlines);
+    std::vector<std::vector<ddd>> ret(maxlines == -1 ? 200000 : maxlines);
     std::string str;
     int i = 0;
     while (std::getline(*stream, str))
@@ -167,22 +170,18 @@ vec<vec<ddd>> formatAUDUSDData(std::ifstream *stream, int maxlines)
 /// @param next the next datapoint
 /// @return next
 /// @details this is a simple function that returns the next datapoint, for algorithms that predict based off previous datapoint(s)
-vec<ddd> no_format_needed(vec<ddd> current, vec<ddd> next) {
+std::vector<ddd> no_format_needed(std::vector<ddd> current, std::vector<ddd> next) {
     return next;
 }
-// high, low, close, volume -> high, low, close, volume (0->inf as 0->1), % change (as (halved)-1->1(doubled))
-vec<ddd> formatExpectedOutputAUDUSDCurrent(vec<ddd> current, vec<ddd> next) {
+// high, low, close, volume -> high, low, close, volume (0->inf as 0->1), % change (as (halved)-1->1(dddd))
+std::vector<ddd> formatExpectedOutputAUDUSDCurrent(std::vector<ddd> current, std::vector<ddd> next) {
     int size = current.size();
-    vec<ddd> ret(size + 1);
+    std::vector<ddd> ret(size + 1);
     if (ret.size() == size + 1)
         std::copy(current.begin(), current.end(), ret.begin());
     ret[size] = current[size - 2] / next[size - 2] - 1;
     return ret;
-}
-ddd LossDerivative(ddd prediction, ddd expected)
-{
-    return 2 * (expected - prediction);
-}
+}   
 ddd sigmoid(ddd x)
 {
     return 1 / (1 + exp(-x));
@@ -191,7 +190,7 @@ ddd sigmoidDerivative(ddd x)
 {
     return x * (1 - x);
 }
-size_t max(vec<size_t> &v)
+size_t max(std::vector<size_t> &v)
 {
     size_t maxVal = 0;
     for (size_t i = 0; i < v.size(); i++)
@@ -207,7 +206,7 @@ size_t min(size_t a, size_t b)
 {
     return (a < b) ? a : b;
 }
-size_t sumFor(vec<size_t> &v, size_t max)
+size_t sumFor(std::vector<size_t> &v, size_t max)
 {
     size_t sum = 0;
     for (size_t i = 0; i < min(v.size(), max); i++)
@@ -216,15 +215,15 @@ size_t sumFor(vec<size_t> &v, size_t max)
     }
     return sum;
 }
-// Vector addition
-vec<ddd> add(const vec<ddd> &v1, const vec<ddd> &v2)
+// std::vectortor addition
+std::vector<ddd> add(const std::vector<ddd> &v1, const std::vector<ddd> &v2)
 {
     if (v1.size() != v2.size())
     {
-        std::cerr << "Error: Vector sizes do not match for addition." << std::endl;
+        std::cerr << "Error: std::vectortor sizes do not match for addition." << std::endl;
         return {};
     }
-    vec<ddd> result(v1.size());
+    std::vector<ddd> result(v1.size());
     for (size_t i = 0; i < v1.size(); ++i)
     {
         result[i] = v1[i] + v2[i];
@@ -232,15 +231,15 @@ vec<ddd> add(const vec<ddd> &v1, const vec<ddd> &v2)
     return result;
 }
 
-// Vector subtraction (v1 - v2)
-vec<ddd> subtract(const vec<ddd> &v1, const vec<ddd> &v2)
+// std::vectortor subtraction (v1 - v2)
+std::vector<ddd> subtract(const std::vector<ddd> &v1, const std::vector<ddd> &v2)
 {
     if (v1.size() != v2.size())
     {
         throw "Error: Matrix sizes do not match for subtraction";
         return {};
     }
-    vec<ddd> result(v1.size());
+    std::vector<ddd> result(v1.size());
     for (size_t i = 0; i < v1.size(); ++i)
     {
         result[i] = v1[i] - v2[i];
@@ -248,13 +247,13 @@ vec<ddd> subtract(const vec<ddd> &v1, const vec<ddd> &v2)
     return result;
 }
 
-ddd dot_product(const vec<ddd> &v1, const vec<ddd> &v2)
+ddd dot_product(const std::vector<ddd> &v1, const std::vector<ddd> &v2)
 {
     
     if (v1.size() != v2.size())
     {
         // In a real implementation, handle errors properly
-        std::cerr << "Error: Vector sizes do not match for dot product." << std::endl;
+        std::cerr << "Error: std::vectortor sizes do not match for dot product." << std::endl;
         return 0.0;
     }
     ddd result = 0.0;
@@ -265,7 +264,7 @@ ddd dot_product(const vec<ddd> &v1, const vec<ddd> &v2)
     return result;
 }
 // Matrix addition
-vec<vec<ddd>> add(const vec<vec<ddd>> &m1, const vec<vec<ddd>> &m2)
+std::vector<std::vector<ddd>> add(const std::vector<std::vector<ddd>> &m1, const std::vector<std::vector<ddd>> &m2)
 {
     if (m1.size() != m2.size() || (m1.empty() ? false : m1[0].size() != m2[0].size()))
     {
@@ -274,7 +273,7 @@ vec<vec<ddd>> add(const vec<vec<ddd>> &m1, const vec<vec<ddd>> &m2)
     }
     if (m1.empty())
         return {};
-    vec<vec<ddd>> result(m1.size(), vec<ddd>(m1[0].size()));
+    std::vector<std::vector<ddd>> result(m1.size(), std::vector<ddd>(m1[0].size()));
     for (size_t i = 0; i < m1.size(); ++i)
     {
         for (size_t j = 0; j < m1[0].size(); ++j)
@@ -286,7 +285,7 @@ vec<vec<ddd>> add(const vec<vec<ddd>> &m1, const vec<vec<ddd>> &m2)
 }
 
 // Matrix subtraction (m1 - m2)
-vec<vec<ddd>> subtract(const vec<vec<ddd>> &m1, const vec<vec<ddd>> &m2)
+std::vector<std::vector<ddd>> subtract(const std::vector<std::vector<ddd>> &m1, const std::vector<std::vector<ddd>> &m2)
 {
     if (m1.size() != m2.size() || (m1.empty() ? false : m1[0].size() != m2[0].size()))
     {
@@ -295,7 +294,7 @@ vec<vec<ddd>> subtract(const vec<vec<ddd>> &m1, const vec<vec<ddd>> &m2)
     }
     if (m1.empty())
         return {};
-    vec<vec<ddd>> result(m1.size(), vec<ddd>(m1[0].size()));
+    std::vector<std::vector<ddd>> result(m1.size(), std::vector<ddd>(m1[0].size()));
     for (size_t i = 0; i < m1.size(); ++i)
     {
         for (size_t j = 0; j < m1[0].size(); ++j)
@@ -305,9 +304,9 @@ vec<vec<ddd>> subtract(const vec<vec<ddd>> &m1, const vec<vec<ddd>> &m2)
     }
     return result;
 }
-vec<vec<ddd>> outerProduct(const vec<ddd> &a, const vec<ddd> &b)
+std::vector<std::vector<ddd>> outerProduct(const std::vector<ddd> &a, const std::vector<ddd> &b)
 {
-    vec<vec<ddd>> result(a.size(), vec<ddd>(b.size()));
+    std::vector<std::vector<ddd>> result(a.size(), std::vector<ddd>(b.size()));
     for (size_t i = 0; i < a.size(); i++)
     {
         for (size_t j = 0; j < b.size(); j++)
@@ -317,20 +316,20 @@ vec<vec<ddd>> outerProduct(const vec<ddd> &a, const vec<ddd> &b)
     }
     return result;
 }
-vec<ddd> scalar_multiply(ddd scalar, const vec<ddd> &vector)
+std::vector<ddd> scalar_multiply(ddd scalar, const std::vector<ddd> &vector)
 {
-    vec<ddd> result(vector.size());
+    std::vector<ddd> result(vector.size());
     for (size_t i = 0; i < vector.size(); ++i)
     {
         result[i] = scalar * vector[i];
     }
     return result;
 }
-vec<vec<ddd>> scalar_multiply(ddd scalar, const vec<vec<ddd>> &matrix)
+std::vector<std::vector<ddd>> scalar_multiply(ddd scalar, const std::vector<std::vector<ddd>> &matrix)
 {
     if (matrix.empty())
         return {};
-    vec<vec<ddd>> result(matrix.size(), vec<ddd>(matrix[0].size()));
+    std::vector<std::vector<ddd>> result(matrix.size(), std::vector<ddd>(matrix[0].size()));
     for (size_t i = 0; i < matrix.size(); ++i)
     {
         for (size_t j = 0; j < matrix[0].size(); ++j)
@@ -340,14 +339,14 @@ vec<vec<ddd>> scalar_multiply(ddd scalar, const vec<vec<ddd>> &matrix)
     }
     return result;
 }
-vec<ddd> matrix_vector_multiply(const vec<vec<ddd>> &matrix, const vec<ddd> &vector)
+std::vector<ddd> matrix_vector_multiply(const std::vector<std::vector<ddd>> &matrix, const std::vector<ddd> &vector)
 {
     if (matrix.empty() || (matrix[0].size() != vector.size()))
     {
         std::cerr << "Error: Matrix/vector sizes do not match for matrix-vector multiply." << std::endl;
         return {};
     }
-    vec<ddd> result(matrix.size(), 0.0);
+    std::vector<ddd> result(matrix.size(), 0.0);
     for (size_t i = 0; i < matrix.size(); ++i)
     {
         result[i] = dot_product(matrix[i], vector);
@@ -355,15 +354,15 @@ vec<ddd> matrix_vector_multiply(const vec<vec<ddd>> &matrix, const vec<ddd> &vec
     return result;
 }
 
-// Vector-matrix multiplication (vector * matrix) - assuming row vector * matrix
-vec<ddd> vector_matrix_multiply(const vec<ddd> &vector, const vec<vec<ddd>> &matrix)
+// vector-matrix multiplication (vector * matrix) - assuming row vector * matrix
+std::vector<ddd> vector_matrix_multiply(const std::vector<ddd> &vector, const std::vector<std::vector<ddd>> &matrix)
 {
     if (matrix.empty() || matrix[0].size() != vector.size())
     {
-        std::cerr << "Error: Vector/matrix sizes do not match for vector-matrix multiply." << std::endl;
+        std::cerr << "Error: vector/matrix sizes do not match for vector-matrix multiply." << std::endl;
         return {};
     }
-    vec<ddd> result(matrix.size(), 0.0);
+    std::vector<ddd> result(matrix.size(), 0.0);
     for (size_t j = 0; j < matrix[0].size(); ++j)
     {
         for (size_t i = 0; i < matrix.size(); ++i)
@@ -373,11 +372,11 @@ vec<ddd> vector_matrix_multiply(const vec<ddd> &vector, const vec<vec<ddd>> &mat
     }
     return result;
 }
-vec<vec<ddd>> transpose(const vec<vec<ddd>> &matrix)
+std::vector<std::vector<ddd>> transpose(const std::vector<std::vector<ddd>> &matrix)
 {
     if (matrix.empty())
         return {};
-    vec<vec<ddd>> result(matrix[0].size(), vec<ddd>(matrix.size()));
+    std::vector<std::vector<ddd>> result(matrix[0].size(), std::vector<ddd>(matrix.size()));
     for (size_t i = 0; i < matrix.size(); ++i)
     {
         for (size_t j = 0; j < matrix[0].size(); ++j)
@@ -387,14 +386,14 @@ vec<vec<ddd>> transpose(const vec<vec<ddd>> &matrix)
     }
     return result;
 }
-vec<vec<vec<ddd>>> transpose(const vec<vec<vec<ddd>>> &matrix)
+std::vector<std::vector<std::vector<ddd>>> transpose(const std::vector<std::vector<std::vector<ddd>>> &matrix)
 {
     if (matrix.empty() || matrix[0].empty())
         return {};
-    vec<vec<vec<ddd>>> result(matrix.size());
+    std::vector<std::vector<std::vector<ddd>>> result(matrix.size());
     for (size_t k = 0; k < matrix.size(); ++k)
     {
-        result[k].resize(matrix[k][0].size(), vec<ddd>(matrix[k].size()));
+        result[k].resize(matrix[k][0].size(), std::vector<ddd>(matrix[k].size()));
         for (size_t i = 0; i < matrix[k].size(); ++i)
         {
             for (size_t j = 0; j < matrix[k][0].size(); ++j)
@@ -405,15 +404,15 @@ vec<vec<vec<ddd>>> transpose(const vec<vec<vec<ddd>>> &matrix)
     }
     return result;
 }
-vec<vec<vec<ddd>>> extractWeights(const vec<vec<vec<ddd>>> &weights)
+std::vector<std::vector<std::vector<ddd>>> extractWeights(const std::vector<std::vector<std::vector<ddd>>> &weights)
 {
-    vec<vec<vec<ddd>>> extractedWeights;
+    std::vector<std::vector<std::vector<ddd>>> extractedWeights;
     for (int i = 0; i < weights.size(); i++)
     {
-        vec<vec<ddd>> extractedLayer;
+        std::vector<std::vector<ddd>> extractedLayer;
         for (int j = 0; j < weights[i].size(); j++)
         {
-            vec<ddd> extractedNeuron(weights[i][j].size() - 1);
+            std::vector<ddd> extractedNeuron(weights[i][j].size() - 1);
             std::copy(weights[i][j].begin() + 1, weights[i][j].end(), extractedNeuron.begin());
             extractedLayer.push_back(extractedNeuron);
         }
@@ -421,7 +420,7 @@ vec<vec<vec<ddd>>> extractWeights(const vec<vec<vec<ddd>>> &weights)
     }
     return extractedWeights;
 }
-void InjectWeights(vec<vec<vec<ddd>>> &weights, const vec<vec<vec<ddd>>> &extractedWeights)
+void InjectWeights(std::vector<std::vector<std::vector<ddd>>> &weights, const std::vector<std::vector<std::vector<ddd>>> &extractedWeights)
 {
     for (int i = 0; i < weights.size(); i++)
     {
@@ -435,12 +434,12 @@ void InjectWeights(vec<vec<vec<ddd>>> &weights, const vec<vec<vec<ddd>>> &extrac
     }
 }
 
-vec<vec<ddd>> extractBiases(const vec<vec<vec<ddd>>> &weights)
+std::vector<std::vector<ddd>> extractBiases(const std::vector<std::vector<std::vector<ddd>>> &weights)
 {
-    vec<vec<ddd>> extractedWeights;
+    std::vector<std::vector<ddd>> extractedWeights;
     for (int i = 0; i < weights.size(); i++)
     {
-        vec<ddd> extractedLayer(weights[i].size());
+        std::vector<ddd> extractedLayer(weights[i].size());
         for (int j = 0; j < weights[i].size(); j++)
         {
             extractedLayer[j] = weights[i][j][0]; // Bias is always at index 0
@@ -449,7 +448,7 @@ vec<vec<ddd>> extractBiases(const vec<vec<vec<ddd>>> &weights)
     }
     return extractedWeights;
 }
-void InjectBiases(vec<vec<vec<ddd>>> &weights, const vec<vec<ddd>> &extractedBiases)
+void InjectBiases(std::vector<std::vector<std::vector<ddd>>> &weights, const std::vector<std::vector<ddd>> &extractedBiases)
 {
     for (int i = 0; i < weights.size(); i++)
     {
@@ -460,11 +459,11 @@ void InjectBiases(vec<vec<vec<ddd>>> &weights, const vec<vec<ddd>> &extractedBia
     }
 }
 // specifically for running the network
-ddd weightedSum(vec<ddd> outsideValues, vec<ddd> insideValues)
+ddd weightedSum(std::vector<ddd> outsideValues, std::vector<ddd> insideValues)
 {
     if (outsideValues.size() != insideValues.size() - 1)
     {
-        std::cerr << "Error: Vector sizes do not match for weighted sum. Sizes are: " << outsideValues.size() << ", " << insideValues.size() << std::endl;
+        std::cerr << "Error: std::vectortor sizes do not match for weighted sum. Sizes are: " << outsideValues.size() << ", " << insideValues.size() << std::endl;
         return {};
     }
     ddd sum = insideValues[0]; // Start with the bias
@@ -475,34 +474,34 @@ ddd weightedSum(vec<ddd> outsideValues, vec<ddd> insideValues)
     return sigmoid(sum);
 }
 
-std::string DoubleToUnreadableString(double *d) {
+std::string DoubleToUnreadableString(ddd *d) {
     std::string str = "";
-    str.resize(sizeof(double));
-    for (int i = 0; i < sizeof(double) / sizeof(char); i++)
+    str.resize(sizeof(ddd));
+    for (int i = 0; i < sizeof(ddd) / sizeof(char); i++)
         str[i] = ((unsigned char *)d)[i];
     return str;
 }
-double UnreadableStringToDouble(std::string str) {
-    return *((double *)str.data());
+ddd UnreadableStringToDouble(std::string str) {
+    return *((ddd *)str.data());
 }
-vec<ddd> longUnreadableStringToArray(std::string s) {
-    vec<ddd> result(s.size()/sizeof(ddd));
+std::vector<ddd> longUnreadableStringToArray(std::string s) {
+    std::vector<ddd> result(s.size()/sizeof(ddd));
     for (size_t i = 0; i < s.size(); i += sizeof(ddd))
         result[i/sizeof(ddd)] = UnreadableStringToDouble(s.substr(i, sizeof(ddd)));
     return result;
 }
-vec<ddd> weightedSums(vec<ddd> outsideValues, vec<vec<ddd>> insideValues)
+std::vector<ddd> weightedSums(std::vector<ddd> outsideValues, std::vector<std::vector<ddd>> insideValues)
 {
-    vec<ddd> sums(insideValues.size());
+    std::vector<ddd> sums(insideValues.size());
     for (size_t i = 0; i < insideValues.size(); i++)
     {
         sums[i] = weightedSum(outsideValues, insideValues[i]);
     }
     return sums;
 }
-vec<vec<ddd>> keepSum(vec<ddd> input, vec<vec<vec<ddd>>> weights)
+std::vector<std::vector<ddd>> keepSum(std::vector<ddd> input, std::vector<std::vector<std::vector<ddd>>> weights)
 {
-    vec<vec<ddd>> sums(weights.size());
+    std::vector<std::vector<ddd>> sums(weights.size());
     for (size_t i = 0; i < weights.size(); i++)
     {
         sums[i] = weightedSums((i == 0 ? input : sums[i - 1]), weights[i]);
@@ -510,9 +509,9 @@ vec<vec<ddd>> keepSum(vec<ddd> input, vec<vec<vec<ddd>>> weights)
     return sums;
 }
 // does everything and only keeps the end
-vec<ddd> NetworkRunSum(vec<ddd> input, vec<vec<vec<ddd>>> weights)
+std::vector<ddd> NetworkRunSum(std::vector<ddd> input, std::vector<std::vector<std::vector<ddd>>> weights)
 {
-    vec<ddd> value(input.size());
+    std::vector<ddd> value(input.size());
     std::copy(input.begin(), input.end(), value.begin());
     for (int i = 0; i < weights.size(); i++)
     {
@@ -520,7 +519,7 @@ vec<ddd> NetworkRunSum(vec<ddd> input, vec<vec<vec<ddd>>> weights)
     }
     return value;
 }
-void Copy(vec<ddd> *to, const vec<ddd> &from)
+void Copy(std::vector<ddd> *to, const std::vector<ddd> &from)
 {
     if (to->size() != from.size())
     {
@@ -551,7 +550,7 @@ std::string millisToString(int64_t milliseconds)
 
     return result;
 }
-std::string millisToString(double milliseconds)
+std::string millisToString(ddd milliseconds)
 {
     int64_t seconds = (milliseconds / 1000);
     int millis = (int)fmod(milliseconds, 1000);

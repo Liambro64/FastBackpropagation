@@ -6,21 +6,21 @@
 class NetworkTrainer {
 private:
 	NeuralNetwork network;
-	vec<int> Layers;
+	std::vector<int> Layers;
 	int inputs;
 public:
-	NetworkTrainer(int inputs, vec<int> layers);
+	NetworkTrainer(int inputs, std::vector<int> layers);
 
 	~NetworkTrainer() = default;
-	std::vector<std::vector<double>> data;
-	void Load(const std::string& fileName, vec<vec<ddd>> (*f)(std::ifstream *, int), int maxLines = -1);
+	std::vector<std::vector<ddd>> data;
+	void Load(const std::string& fileName, std::vector<std::vector<ddd>> (*f)(std::ifstream *, int), int maxLines = -1);
 	//returns a gradient of doubles which represents the error of the network over time
-	vec<ddd> Train(vec<ddd> (*formatExpectedOutput)(vec<ddd>, vec<ddd>), int epochs = 1000, double learningRate = 0.01, int datapoints = 1000, int printAfter = -1);
-	vec<ddd> TrainOffFunctions(vec<ddd> (*input)(vec<ddd>), vec<ddd> (*output)(vec<ddd>), int epochs = 100, double learningRate = 0.0001, int datapoints = 1000000);
-	//vec<ddd> TrainGPU(int epochs = 1000, double learningRate = 0.01, int datapoints = 1000, int printAfter = -1);
-	vec<ddd> Run(vec<ddd> (*formatExpectedOutput)(vec<ddd>, vec<ddd>), int datapoints);
+	std::vector<ddd> Train(std::vector<ddd> (*formatExpectedOutput)(std::vector<ddd>, std::vector<ddd>), int epochs = 1000, ddd learningRate = 0.01, int datapoints = 1000, int printAfter = -1);
+	std::vector<ddd> TrainOffFunctions(std::vector<ddd> (*input)(std::vector<ddd>), std::vector<ddd> (*output)(std::vector<ddd>), int epochs = 100, ddd learningRate = 0.0001, int datapoints = 1000000);
+	//std::vector<ddd> TrainGPU(int epochs = 1000, double learningRate = 0.01, int datapoints = 1000, int printAfter = -1);
+	std::vector<ddd> Run(std::vector<ddd> (*formatExpectedOutput)(std::vector<ddd>, std::vector<ddd>), int datapoints);
 	NeuralNetwork getNetwork() {return network;}
-	//vec<ddd> RunGPU(vec<ddd> *input) ;
+	//std::vector<ddd> RunGPU(std::vector<ddd> *input) ;
 	size_t SaveWeights(std::string filename);
 	bool LoadWeights(std::string filename);
 };

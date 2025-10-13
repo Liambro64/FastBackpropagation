@@ -7,16 +7,16 @@ all : bin runtest
 bin: 
 	mkdir bin
 
-dll :
-	g++ -shared -o bin/libNeuralNetwork.dll src/NeuralNetwork.cpp src/NetworkTrainer.cpp src/Math.cpp -fPIC
+so :
+	g++ -shared -o bin/libNeuralNetwork.so src/NeuralNetwork.cpp src/NetworkTrainer.cpp src/Math.cpp -fPIC
 
 runtest : buildtest
 	./$(out)
 
 buildtest :
-	nvcc -arch=compute_86 -l curl $(main) $(code) -o $(out)
+	nvcc -arch=compute_86 $(main) $(code) -o $(out)
 
-rundebug :
+rundebug : debugbuild
 	./$(dbgout)
 
 debugbuild :

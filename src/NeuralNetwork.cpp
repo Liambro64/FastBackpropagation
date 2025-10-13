@@ -1,14 +1,14 @@
 #include "../Project.hpp"
 
-vec<vec<vec<ddd>>> NeuralNetwork::extractWeights()
+std::vector<std::vector<std::vector<ddd>>> NeuralNetwork::extractWeights()
 {
-	vec<vec<vec<ddd>>> extractedWeights;
+	std::vector<std::vector<std::vector<ddd>>> extractedWeights;
 	for (int i = 0; i < weights.size(); i++)
 	{
-		vec<vec<ddd>> extractedLayer;
+		std::vector<std::vector<ddd>> extractedLayer;
 		for (int j = 0; j < weights[i].size(); j++)
 		{
-			vec<ddd> extractedNeuron(weights[i][j].size() - 1);									// Exclude bias
+			std::vector<ddd> extractedNeuron(weights[i][j].size() - 1);									// Exclude bias
 			std::copy(weights[i][j].begin() + 1, weights[i][j].end(), extractedNeuron.begin()); // Copy weights excluding bias
 			extractedLayer.push_back(extractedNeuron);
 		}
@@ -16,7 +16,7 @@ vec<vec<vec<ddd>>> NeuralNetwork::extractWeights()
 	}
 	return extractedWeights;
 }
-void NeuralNetwork::InjectWeights(const vec<vec<vec<ddd>>> &extractedWeights)
+void NeuralNetwork::InjectWeights(const std::vector<std::vector<std::vector<ddd>>> &extractedWeights)
 {
 	for (int i = 0; i < weights.size(); i++)
 	{
@@ -59,12 +59,12 @@ bool NeuralNetwork::operator==(const NeuralNetwork &other)
 	}
 	return false;
 }
-vec<vec<ddd>> NeuralNetwork::extractBiases()
+std::vector<std::vector<ddd>> NeuralNetwork::extractBiases()
 {
-	vec<vec<ddd>> extractedWeights;
+	std::vector<std::vector<ddd>> extractedWeights;
 	for (int i = 0; i < weights.size(); i++)
 	{
-		vec<ddd> extractedLayer;
+		std::vector<ddd> extractedLayer;
 		for (int j = 0; j < weights[i].size(); j++)
 		{
 			extractedLayer.push_back(weights[i][j][0]);
@@ -73,7 +73,7 @@ vec<vec<ddd>> NeuralNetwork::extractBiases()
 	}
 	return extractedWeights;
 }
-void NeuralNetwork::InjectBiases(const vec<vec<ddd>> &extractedBiases)
+void NeuralNetwork::InjectBiases(const std::vector<std::vector<ddd>> &extractedBiases)
 {
 	for (int i = 0; i < weights.size(); i++)
 	{
@@ -83,17 +83,17 @@ void NeuralNetwork::InjectBiases(const vec<vec<ddd>> &extractedBiases)
 		}
 	}
 }
-NeuralNetwork::NeuralNetwork(int inputs, vec<int> layerSizes, ddd (*randFunc)()) : randFunc(randFunc), inputs(inputs)
+NeuralNetwork::NeuralNetwork(int inputs, std::vector<int> layerSizes, ddd (*randFunc)()) : randFunc(randFunc), inputs(inputs)
 {
-	weights = vec<vec<vec<ddd>>>();
+	weights = std::vector<std::vector<std::vector<ddd>>>();
 	// Initialize weights for each layer
 	for (int i = 0; i < layerSizes.size(); i++)
 	{
 		int prevSize = (i == 0) ? inputs : layerSizes[i - 1];
-		vec<vec<ddd>> layerWeights;
+		std::vector<std::vector<ddd>> layerWeights;
 		for (int j = 0; j < layerSizes[i]; j++)
 		{
-			vec<ddd> neuronWeights;
+			std::vector<ddd> neuronWeights;
 			// Bias for the neuron
 			neuronWeights.push_back(randFunc());
 			// Weights for inputs from previous layer neurons
@@ -106,17 +106,17 @@ NeuralNetwork::NeuralNetwork(int inputs, vec<int> layerSizes, ddd (*randFunc)())
 		weights.push_back(layerWeights);
 	}
 }
-void NeuralNetwork::GenerateWeights(int inputs, vec<int> layerSizes)
+void NeuralNetwork::GenerateWeights(int inputs, std::vector<int> layerSizes)
 {
-	weights = vec<vec<vec<ddd>>>();
+	weights = std::vector<std::vector<std::vector<ddd>>>();
 	// Initialize weights for each layer
 	for (int i = 0; i < layerSizes.size(); i++)
 	{
 		int prevSize = (i == 0) ? inputs : layerSizes[i - 1];
-		vec<vec<ddd>> layerWeights;
+		std::vector<std::vector<ddd>> layerWeights;
 		for (int j = 0; j < layerSizes[i]; j++)
 		{
-			vec<ddd> neuronWeights;
+			std::vector<ddd> neuronWeights;
 			// Bias for the neuron
 			neuronWeights.push_back(0);
 			// Weights for inputs from previous layer neurons
@@ -129,7 +129,7 @@ void NeuralNetwork::GenerateWeights(int inputs, vec<int> layerSizes)
 		weights.push_back(layerWeights);
 	}
 }
-long NeuralNetwork::SetWeightsFromArray(vec<ddd> weightsAsArray)
+long NeuralNetwork::SetWeightsFromArray(std::vector<ddd> weightsAsArray)
 {
 	long totalIndex = 0;
 	for (int i = 0; i < weights.size(); i++)
@@ -145,18 +145,18 @@ long NeuralNetwork::SetWeightsFromArray(vec<ddd> weightsAsArray)
 	return totalIndex;
 }
 
-vec<ddd> NeuralNetwork::Run(vec<ddd> *input)
+std::vector<ddd> NeuralNetwork::Run(std::vector<ddd> *input)
 {
 	return NetworkRunSum(*input, weights);
 }
-// vec<ddd> NeuralNetwork::RunGPU(vec<ddd> *input)
+// std::vector<ddd> NeuralNetwork::RunGPU(std::vector<ddd> *input)
 // {
 // 	return FullRun(*input, weights)[weights.size() - 1];
 // }
-ddd NeuralNetwork::Learn(vec<ddd> input, vec<ddd> expectedOutput)
+ddd NeuralNetwork::Learn(std::vector<ddd> input, std::vector<ddd> expectedOutput)
 {
 	// run but keep the values
-	vec<vec<ddd>> values;
+	std::vector<std::vector<ddd>> values;
 	values.resize(weights.size() + 1);
 	values[0] = input;
 	for (int i = 0; i < weights.size(); i++)
@@ -168,8 +168,8 @@ ddd NeuralNetwork::Learn(vec<ddd> input, vec<ddd> expectedOutput)
 		}
 	}
 	double loss = LossFunction(values[weights.size()], expectedOutput);
-	vec<vec<ddd>> errVals(weights.size());			  // deltas (for biases)
-	vec<vec<vec<ddd>>> weightChanges(weights.size()); // deltas (for weights)
+	std::vector<std::vector<ddd>> errVals(weights.size());			  // deltas (for biases)
+	std::vector<std::vector<std::vector<ddd>>> weightChanges(weights.size()); // deltas (for weights)
 	for (int i = 0; i < weights.size(); i++)
 	{
 		errVals[i].resize(weights[i].size());
@@ -181,10 +181,10 @@ ddd NeuralNetwork::Learn(vec<ddd> input, vec<ddd> expectedOutput)
 	auto preTransposedWeights = transpose(extractWeights());
 	for (int i = weights.size() - 1; i >= 0; i--)
 	{
-		weightChanges[i] = outerProduct(values[i], errVals[i]);
+		weightChanges[i] = outerProduct(errVals[i], values[i]);
 		if (i != 0)
 		{
-			vec<ddd> err = vector_matrix_multiply(errVals[i], preTransposedWeights[i]);
+			std::vector<ddd> err = vector_matrix_multiply(errVals[i], preTransposedWeights[i]);
 			for (int j = 0; j < weights[i - 1].size(); j++)
 			{
 				errVals[i - 1][j] = err[j] * sigmoidDerivative(values[i][j]);
@@ -195,10 +195,10 @@ ddd NeuralNetwork::Learn(vec<ddd> input, vec<ddd> expectedOutput)
 	{
 		for (int j = 0; j < weights[i].size(); j++)
 		{
-			weights[i][j][0] -= alpha * errVals[i][j];
+			weights[i][j][0] += alpha * errVals[i][j];
 			for (int k = 1; k < weights[i][j].size(); k++)
 			{
-				weights[i][j][k] -= alpha * weightChanges[i][k - 1][j];
+				weights[i][j][k] += alpha * weightChanges[i][j][k - 1];
 			}
 		}
 	}
@@ -206,7 +206,7 @@ ddd NeuralNetwork::Learn(vec<ddd> input, vec<ddd> expectedOutput)
 	return loss;
 }
 
-// ddd NeuralNetwork::LearnGPU(vec<ddd> input, vec<ddd> expectedOutput, ddd learningRate)
+// ddd NeuralNetwork::LearnGPU(std::vector<ddd> input, std::vector<ddd> expectedOutput, ddd learningRate)
 // {
 // }
 size_t NeuralNetwork::SaveWeights(std::string filename)
@@ -215,6 +215,7 @@ size_t NeuralNetwork::SaveWeights(std::string filename)
 	{
 		std::string size = "";
 		std::fstream stream(filename);
+		
 		if (stream.is_open() == false)
 			throw std::invalid_argument("Couldnt load file into stream");
 		for (int i = 0; i < weights.size(); i++)
@@ -263,7 +264,7 @@ bool NeuralNetwork::LoadWeights(std::string filename)
 		stream.getline(size.data(), 2048, '\n');
 		std::string main;
 		long lsize = 0;
-		vec<int> sizes = {};
+		std::vector<int> sizes = {};
 		long tmplyrSize = 0;
 		int i;
 		for (i = 0; i < size.size(); i++)
@@ -296,7 +297,7 @@ bool NeuralNetwork::LoadWeights(std::string filename)
 
 		main.resize(lsize + 1);
 		stream.read(main.data(), lsize);
-		vec<ddd> weightsAsArray = longUnreadableStringToArray(main);
+		std::vector<ddd> weightsAsArray = longUnreadableStringToArray(main);
 		SetWeightsFromArray(weightsAsArray);
 		// praying this works
 		return true;

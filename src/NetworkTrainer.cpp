@@ -9,9 +9,9 @@ ddd randD()
 	return dis(gen);
 }
 
-NetworkTrainer::NetworkTrainer(int inputs, vec<int> layers) : inputs(inputs), network(inputs, layers, randD), Layers(layers) {}
+NetworkTrainer::NetworkTrainer(int inputs, std::vector<int> layers) : inputs(inputs), network(inputs, layers, randD), Layers(layers) {}
 
-void NetworkTrainer::Load(const std::string &fileName, vec<vec<ddd>> (*f)(std::ifstream *, int), int maxLines)
+void NetworkTrainer::Load(const std::string &fileName, std::vector<std::vector<ddd>> (*f)(std::ifstream *, int), int maxLines)
 {
 	std::cout << "Loading data from " << fileName << std::endl;
 	std::ifstream file(fileName);
@@ -23,7 +23,7 @@ void NetworkTrainer::Load(const std::string &fileName, vec<vec<ddd>> (*f)(std::i
 	data = f(&file, maxLines);
 	std::cout << "Loaded " << data.size() << " Lines of data from " << fileName << std::endl;
 }
-vec<ddd> NetworkTrainer::Train(vec<ddd> (*formatExpectedOutput)(vec<ddd>, vec<ddd>), int epochs, ddd learningRate, int datapoints, int printAfter)
+std::vector<ddd> NetworkTrainer::Train(std::vector<ddd> (*formatExpectedOutput)(std::vector<ddd>, std::vector<ddd>), int epochs, ddd learningRate, int datapoints, int printAfter)
 {
 	if (data.empty())
 	{
@@ -40,28 +40,28 @@ vec<ddd> NetworkTrainer::Train(vec<ddd> (*formatExpectedOutput)(vec<ddd>, vec<dd
 			  << std::endl
 			  << std::endl;
 	auto start = std::chrono::high_resolution_clock::now();
-	vec<ddd> errorGradientVector(0);
+	std::vector<ddd> errorGradientVector(0);
 	auto last = start;
 	int trendSize = printAfter;
 	int batches = this->inputs / data[0].size();
-	double trend = 0;
-	vec<ddd> trendVector(0);
+	ddd trend = 0;
+	std::vector<ddd> trendVector(0);
 	for (int epoch = 0; epoch < epochs; epoch++)
 	{
 		auto startEpoch = std::chrono::high_resolution_clock::now();
 		if (epoch != 0)
 			network.alpha = learningRate;
-		double err = 0;
+		ddd err = 0;
 		std::cout << "Epoch " << epoch + 1 << "/" << epochs << std::endl
 				  << std::endl
 				  << std::endl;
-		double lastError = 0;
+		ddd lastError = 0;
 		for (int i = 0; i < datapoints; i++)
 		{
-			double currentError = 0;
-			std::vector<double> inputs(this->inputs);
-			std::vector<double> out;
-			std::vector<double> expectedOut(Layers[Layers.size() - 1]);
+			ddd currentError = 0;
+			std::vector<ddd> inputs(this->inputs);
+			std::vector<ddd> out;
+			std::vector<ddd> expectedOut(Layers[Layers.size() - 1]);
 			for (int j = 0; j < batches; j++)
 			{
 				for (int k = 0; k < data[i].size(); k++)
@@ -83,7 +83,7 @@ vec<ddd> NetworkTrainer::Train(vec<ddd> (*formatExpectedOutput)(vec<ddd>, vec<dd
 				if (is0)
 					i++;
 				errorGradientVector.push_back(currentError);
-				double percent = ((100 * ((double)epoch * (double)datapoints + i)) / (double)(epochs * datapoints));
+				ddd percent = ((100 * ((ddd)epoch * (ddd)datapoints + i)) / (ddd)(epochs * datapoints));
 				std::string progressBar = std::to_string(percent);
 				int j = 0;
 				progressBar += "% ";
@@ -150,30 +150,30 @@ vec<ddd> NetworkTrainer::Train(vec<ddd> (*formatExpectedOutput)(vec<ddd>, vec<dd
 	return errorGradientVector;
 }
 
-vec<ddd> NetworkTrainer::TrainOffFunctions(vec<ddd> (*input)(vec<ddd>), vec<ddd> (*output)(vec<ddd>), int epochs, ddd learningRate, int datapoints)
+std::vector<ddd> NetworkTrainer::TrainOffFunctions(std::vector<ddd> (*input)(std::vector<ddd>), std::vector<ddd> (*output)(std::vector<ddd>), int epochs, ddd learningRate, int datapoints)
 {
 	network.alpha = learningRate;
 	std::cout << "Training network with " << epochs << " epochs and learning rate " << network.alpha << " and a data size of " << datapoints << std::endl
 			  << std::endl
 			  << std::endl
 			  << std::endl;
-	vec<ddd> errorGradientVector(0);
+	std::vector<ddd> errorGradientVector(0);
 	for (int epoch = 0; epoch < epochs; epoch++)
 	{
-		double err = 0;
+		ddd err = 0;
 		std::cout << "Epoch " << epoch + 1 << "/" << epochs << std::endl
 				  << std::endl
 				  << std::endl;
-		double lastError = 0;
+		ddd lastError = 0;
 		for (int i = 0; i < datapoints; i++)
 		{
-			vec<ddd> position(this->inputs);
+			std::vector<ddd> position(this->inputs);
 			for (int j = 0; j < position.size(); j++)
 			{
 				position[j] = randD();
 			}
-			vec<ddd> inputs = input(position);
-			vec<ddd> expectedOut = output(position);
+			std::vector<ddd> inputs = input(position);
+			std::vector<ddd> expectedOut = output(position);
 			err += network.Learn(inputs, expectedOut);
 			// std::cout << "Current Error: " << currentError << " for datapoint " << i << " for epoch " << epoch+1 << std::endl;
 			
@@ -186,7 +186,7 @@ vec<ddd> NetworkTrainer::TrainOffFunctions(vec<ddd> (*input)(vec<ddd>), vec<ddd>
 }
 
 
-// vec<ddd> NetworkTrainer::TrainGPU(int epochs, ddd learningRate, int datapoints, int printAfter)
+// std::vector<ddd> NetworkTrainer::TrainGPU(int epochs, ddd learningRate, int datapoints, int printAfter)
 // {
 // 	if (data.empty() || data.size() < datapoints)
 // 	{
@@ -201,23 +201,23 @@ vec<ddd> NetworkTrainer::TrainOffFunctions(vec<ddd> (*input)(vec<ddd>), vec<ddd>
 // 			  << std::endl
 // 			  << std::endl;
 // 	auto start = std::chrono::high_resolution_clock::now();
-// 	vec<ddd> errorGradientVector(0);
+// 	std::vector<ddd> errorGradientstd::vectortor(0);
 // 	auto last = start;
 // 	for (int epoch = 0; epoch < epochs; epoch++)
 // 	{
 // 		auto startEpoch = std::chrono::high_resolution_clock::now();
 // 		if (epoch != 0)
 // 			network.alpha = learningRate / (epoch + 1); // Decrease learning rate over time for better convergence
-// 		double err = 0;
+// 		ddd err = 0;
 // 		std::cout << "\x1b[1F\x1b[2K\x1b[1F\x1b[2K\x1b[1F\x1b[2K" << "Epoch " << epoch + 1 << "/" << epochs << std::endl
 // 				  << std::endl
 // 				  << std::endl;
 // 		for (int i = 0; i < datapoints; i++)
 // 		{
-// 			double currentError = 0;
-// 			std::vector<double> inputs(Layers[0]);
-// 			std::vector<double> out;
-// 			std::vector<double> expectedOut(Layers[Layers.size() - 1]);
+// 			ddd currentError = 0;
+// 			std::std::vectortor<ddd> inputs(Layers[0]);
+// 			std::std::vectortor<ddd> out;
+// 			std::std::vectortor<ddd> expectedOut(Layers[Layers.size() - 1]);
 // 			for (int j = 0; j < Layers[0] / data[i].size(); j++)
 // 			{
 // 				inputs[(j * data[i].size())] = data[i + j][0];
@@ -237,8 +237,8 @@ vec<ddd> NetworkTrainer::TrainOffFunctions(vec<ddd> (*input)(vec<ddd>), vec<ddd>
 // 				bool is0 = (i == 0);
 // 				if (is0)
 // 					i++;
-// 				errorGradientVector.push_back(currentError);
-// 				double percent = ((100 * ((double)epoch * (double)datapoints + i)) / (double)(epochs * datapoints));
+// 				errorGradientstd::vectortor.push_back(currentError);
+// 				ddd percent = ((100 * ((ddd)epoch * (ddd)datapoints + i)) / (ddd)(epochs * datapoints));
 // 				std::string progressBar = std::to_string(percent);
 // 				int j = 0;
 // 				progressBar += "% ";
@@ -271,8 +271,8 @@ vec<ddd> NetworkTrainer::TrainOffFunctions(vec<ddd> (*input)(vec<ddd>), vec<ddd>
 // 				auto totalduration = std::chrono::duration_cast<std::chrono::milliseconds>(now - start).count();
 // 				auto epochduration = std::chrono::duration_cast<std::chrono::milliseconds>(now - startEpoch).count();
 // 				auto lastduration = std::chrono::duration_cast<std::chrono::milliseconds>(now - last).count();
-// 				double estimatedTotalDuration = ((double)totalduration) / (percent / 100);
-// 				double estimatedTimeLeft = estimatedTotalDuration - totalduration;
+// 				ddd estimatedTotalDuration = ((ddd)totalduration) / (percent / 100);
+// 				ddd estimatedTimeLeft = estimatedTotalDuration - totalduration;
 // 				int days = estimatedTimeLeft / (1000 * 60 * 60 * 24);
 // 				int hours = (int)(estimatedTimeLeft / (1000 * 60 * 60)) % 24;
 // 				int minutes = (int)(estimatedTimeLeft / (1000 * 60)) % 60;
@@ -290,7 +290,7 @@ vec<ddd> NetworkTrainer::TrainOffFunctions(vec<ddd> (*input)(vec<ddd>), vec<ddd>
 // 		err /= datapoints;
 // 		std::cout << "Epoch " << epoch + 1 << "/" << epochs << " complete, Average Error: " << err << std::endl;
 // 	}
-// 	return errorGradientVector;
+// 	return errorGradientstd::vectortor;
 // }
 size_t NetworkTrainer::SaveWeights(std::string filename)
 {
@@ -301,23 +301,23 @@ bool NetworkTrainer::LoadWeights(std::string filename)
 	return network.LoadWeights(filename);
 }
 /// @brief runs over datapoints datapoints from data loaded from Load()
-/// @param formatExpectedOutput A function that takes 2 vectors and returns 1. Go to details for more
-/// @return a pair of doubles, first is the average error and second is the total error
-/// @details The first vector is the "current" datapoint (if you are using more than one in the input it will be the last one), and the second is the next. (this is just for me because i am trying to predict stock changes over time)
-vec<ddd> NetworkTrainer::Run(vec<ddd> (*formatExpectedOutput)(vec<ddd>, vec<ddd>), int datapoints = 1000)
+/// @param formatExpectedOutput A function that takes 2 std::vectortors and returns 1. Go to details for more
+/// @return a pair of ddds, first is the average error and second is the total error
+/// @details The first std::vectortor is the "current" datapoint (if you are using more than one in the input it will be the last one), and the second is the next. (this is just for me because i am trying to predict stock changes over time)
+std::vector<ddd> NetworkTrainer::Run(std::vector<ddd> (*formatExpectedOutput)(std::vector<ddd>, std::vector<ddd>), int datapoints = 1000)
 {
-	double error = 0;
-	double highest = 0;
-	double lowest = 0;
+	ddd error = 0;
+	ddd highest = 0;
+	ddd lowest = 0;
 	// assuming the data is all the same size, calculate how many datapoints go into the network. ("batches" of data)
 	int batches = inputs / data[0].size();
 	std::cout << "Starting" << std::endl;
 	for (int i = 0; i < datapoints; i++)
 	{
-		double currentErr;
-		std::vector<double> inputs(this->inputs);
-		std::vector<double> out(Layers[Layers.size() - 1]);
-		std::vector<double> expectedOut(Layers[Layers.size() - 1]);
+		ddd currentErr;
+		std::vector<ddd> inputs(this->inputs);
+		std::vector<ddd> out(Layers[Layers.size() - 1]);
+		std::vector<ddd> expectedOut(Layers[Layers.size() - 1]);
 		for (int j = 0; j < batches; j++)
 		{
 			for (int k = 0; k < data[i].size(); k++)
@@ -332,13 +332,13 @@ vec<ddd> NetworkTrainer::Run(vec<ddd> (*formatExpectedOutput)(vec<ddd>, vec<ddd>
 			lowest = currentErr;
 		if (i == 0 || (i + 1) % (datapoints / 10) == 0)
 		{
-			std::cout << "\x1b[1F\x1b[2K" << "Datapoint " << i + 1 << "/" << datapoints << ", \t" << ((i + 1) / (double)datapoints) * 100 << "% done" << std::endl;
+			std::cout << "\x1b[1F\x1b[2K" << "Datapoint " << i + 1 << "/" << datapoints << ", \t" << ((i + 1) / (ddd)datapoints) * 100 << "% done" << std::endl;
 		}
 	}
-	vec<double> ret = {error / datapoints, error, highest, lowest};
+	std::vector<ddd> ret = {error / datapoints, error, highest, lowest};
 	return ret;
 }
-// vec<ddd> NetworkTrainer::RunGPU(vec<ddd> *input)
+// std::vector<ddd> NetworkTrainer::RunGPU(std::vector<ddd> *input)
 // {
 // 	return network.RunGPU(input);
 // }

@@ -10,9 +10,9 @@ double randomFunc()
 void NetworkTest()
 {
 	
-	vec<int> layers = {400, 250, 120, 40, 12, 6};
+	std::vector<int> layers = {400, 250, 120, 40, 12, 6};
 	NeuralNetwork network = NeuralNetwork(8, layers, randomFunc);
-	vec<ddd> ins(4);
+	std::vector<ddd> ins(4);
 	for (int i = 0; i < 4; i++)
 		ins[i] = randomFunc();
 	network.Run(&ins);
@@ -20,14 +20,14 @@ void NetworkTest()
 
 void TrainerTest()
 {
-	vec<int> layers = {500, 350, 200, 120, 60, 20, 6};
+	std::vector<int> layers = {500, 350, 200, 120, 60, 20, 6};
 	NetworkTrainer Trainer = NetworkTrainer(8, layers);
 	Trainer.Load("Data/Stock/AUDUSD/Data15M.csv", &formatAUDUSDData, 25600);
 	Trainer.Train(&formatExpectedOutputAUDUSDCurrent, 50, 0.05, 25000, 25);
 }
 void smalltrainertest()
 {
-	vec<int> layers = {350, 200, 135, 90, 60, 20, 6};
+	std::vector<int> layers = {350, 200, 135, 90, 60, 20, 6};
 	int data = 5000;
 	int epochs = 400;
 	int nextPo2 = (int)std::pow(2, std::ceil(std::log2(data)));
@@ -39,7 +39,7 @@ void smalltrainertest()
 // not working
 // void largeTrainertestGPU()
 // {
-// 	vec<int> layers = {50, 125, 200, 345, 500, 415, 255, 135, 90, 60, 20, 1};
+// 	std::vector<int> layers = {50, 125, 200, 345, 500, 415, 255, 135, 90, 60, 20, 1};
 // 	NetworkTrainer Trainer = NetworkTrainer(8, layers);
 // 	Trainer.Load("Data/Stock/AUDUSD/Data15M.csv", &formatAUDUSDData, 25600);
 
@@ -48,7 +48,7 @@ void smalltrainertest()
 
 void largedatatrainertest()
 {
-	vec<int> layers = {90, 25, 6};
+	std::vector<int> layers = {90, 25, 6};
 	int data = 50000;
 	int epochs = 400;
 	int nextPo2 = (int)std::pow(2, std::ceil(std::log2(data)));
@@ -56,9 +56,9 @@ void largedatatrainertest()
 	Trainer.Load("Data/Stock/AUDUSD/Data15M.csv", &formatAUDUSDData, nextPo2);
 	Trainer.Train(&formatExpectedOutputAUDUSDCurrent, 400, 0.4, data, 500);
 }
-NetworkTrainer saveCPUTest(int data = 50000, int epochs = 20)
+NetworkTrainer saveCPUtest(int data = 50000, int epochs = 20)
 {
-	vec<int> layers = {350, 200, 135, 90, 60, 20, 5};
+	std::vector<int> layers = {350, 200, 135, 90, 60, 20, 5};
 	int inputs = 20;
 	int nextPo2 = (int)std::pow(2, std::ceil(std::log2(data)) + 1);
 	NetworkTrainer Trainer = NetworkTrainer(inputs, layers);
@@ -67,7 +67,7 @@ NetworkTrainer saveCPUTest(int data = 50000, int epochs = 20)
 	Trainer.SaveWeights("WeightsSaves/WeightsRCT.fbp");
 	return Trainer;
 }
-NetworkTrainer CPULoadTest(int data = 50000, int epochs = 25, vec<int> layers = {500, 200, 70, 30, 5}, int printafter = 25)
+NetworkTrainer CPULoadTest(int data = 50000, int epochs = 25, std::vector<int> layers = {500, 200, 70, 30, 5}, int printafter = 25)
 {
 	int inputs = 20;
 	int nextPo2 = (int)std::pow(2, std::ceil(std::log2(data)) + 1);
@@ -78,7 +78,7 @@ NetworkTrainer CPULoadTest(int data = 50000, int epochs = 25, vec<int> layers = 
 }
 NetworkTrainer weightLoadCPUTest(int data = 50000)
 {
-	vec<int> layers = {350, 200, 135, 90, 60, 20, 5};
+	std::vector<int> layers = {350, 200, 135, 90, 60, 20, 5};
 	int inputs = 20;
 	int nextPo2 = (int)std::pow(2, std::ceil(std::log2(data)) + 1);
 	NetworkTrainer Trainer = NetworkTrainer(inputs, layers);
@@ -89,36 +89,45 @@ NetworkTrainer weightLoadCPUTest(int data = 50000)
 	return Trainer;
 }
 
-vec<ddd> makeInput(vec<ddd> input)
+
+std::vector<ddd> makeXorInput(int input)
 {
-	return input;
+	return input == 0 ? std::vector<ddd>{0, 1} : input == 1 ? std::vector<ddd>{1, 0} : input == 2 ? std::vector<ddd>{1, 1} : std::vector<ddd>{0, 0};
 }
-vec<ddd> makeOutput(vec<ddd> input)
+std::vector<ddd> makeXorOutput(int input)
 {
-	vec<ddd> output = {input[0], input[0], input[0]};
-	return output;
+	return input == 0 ? std::vector<ddd>{1} : input == 1 ? std::vector<ddd>{1} : input == 2 ? std::vector<ddd>{0} : std::vector<ddd>{0};
 }
 
-
-NetworkTrainer TrainOffFunctionsTest(int inputs = 2, int data = 20000, int epochs = 250, vec<int> layers = {5, 7, 10, 13, 18, 26, 34, 21, 13, 7, 5, 3})
+std::vector<ddd> makeInput(std::vector<ddd> input)
+{
+	static unsigned long long counter = 0;
+	return makeXorInput(counter++ % 4);
+}
+std::vector<ddd> makeOutput(std::vector<ddd> input)
+{
+	static unsigned long long counter = 0;
+	return makeXorOutput(counter++ % 4);
+}
+NetworkTrainer TrainOffFunctionsTest(int inputs = 2, int data = 20000, int epochs = 250, std::vector<int> layers = {5, 7, 10, 13, 18, 26, 34, 21, 13, 7, 5, 3})
 {
 	int nextPo2 = (int)std::pow(2, std::ceil(std::log2(data)) + 1);
 	NetworkTrainer Trainer = NetworkTrainer(inputs, layers);
-	Trainer.TrainOffFunctions(&makeInput, &makeOutput, epochs, 0.00001, data);
+	Trainer.TrainOffFunctions(&makeInput, &makeOutput, epochs, 0.1, data);
 	return Trainer;
 }
 
-// vec<vec<ddd>> optester() {
+// std::vector<std::vector<ddd>> optester() {
 // 	size_t v1size = 1000;
 // 	size_t v2size = 1000;
-// 	vec<ddd> in(v1size);
-// 	vec<ddd> in2(v2size);
+// 	std::vector<ddd> in(v1size);
+// 	std::vector<ddd> in2(v2size);
 // 	for (size_t i = 0; i < v1size; i++)
 // 		in[i] = randomFunc();
 // 	for (size_t i = 0; i < v2size; i++)
 // 		in2[i] = randomFunc();
 // 	auto out = optest(in, in2);
-// 	vec<vec<ddd>> out2(v1size, vec<ddd>(v2size));
+// 	std::vector<std::vector<ddd>> out2(v1size, std::vector<ddd>(v2size));
 // 	for (size_t i = 0; i < out.size(); i++)
 // 	{
 // 		for (size_t j = 0; j < out[i].size(); j++)
@@ -141,7 +150,15 @@ int main()
 	// smalltrainertest();
 	//auto functionTrainer = TrainOffFunctionsTest();
 	//optester();
-	auto Trainer1 = CPULoadTest(5000, 25, {200, 100, 50, 20, 5}, 250);
+	auto Trainer1 = TrainOffFunctionsTest(2, 5000, 500, {7, 1});
+	Trainer1.SaveWeights("WeightsSaves/WeightsRCT2.fbp");
+	auto testInput = std::vector<std::vector<ddd>>{std::vector<ddd>{1, 0}, std::vector<ddd>{0, 1}, std::vector<ddd>{1, 1}, std::vector<ddd>{0, 0}};
+
+	for (int i = 0; i < testInput.size(); i++)
+	{
+		auto out = Trainer1.getNetwork().Run(&(testInput[i]));
+		std::cout << "Input: [" << testInput[i][0] << ", " << testInput[i][1] << "] \tOutput: " << out[0] << std::endl;
+	}
 	// auto Trainer2 = weightLoadCPUTest(1000);
 	// largeTrainertestGPU();
 	return 0;

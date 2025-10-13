@@ -24,7 +24,7 @@
     "deque": "cpp",
     "string": "cpp",
     "unordered_map": "cpp",
-    "vector": "cpp",
+    "std::vectortor": "cpp",
     "exception": "cpp",
     "algorithm": "cpp",
     "functional": "cpp",
@@ -74,7 +74,8 @@
     "future": "cpp",
     "shared_mutex": "cpp",
     "typeindex": "cpp",
-    "regex": "cpp"
+    "regex": "cpp",
+    "vector": "cpp"
   },
   "C_Cpp_Runner.cCompilerPath": "gcc",
   "C_Cpp_Runner.cppCompilerPath": "g++",
