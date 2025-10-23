@@ -150,14 +150,18 @@ int main()
 	// smalltrainertest();
 	//auto functionTrainer = TrainOffFunctionsTest();
 	//optester();
-	auto Trainer1 = TrainOffFunctionsTest(2, 5000, 500, {7, 1});
+	auto Trainer1 = TrainOffFunctionsTest(2, 5000, 50, {7, 1});
 	Trainer1.SaveWeights("WeightsSaves/WeightsRCT2.fbp");
 	auto testInput = std::vector<std::vector<ddd>>{std::vector<ddd>{1, 0}, std::vector<ddd>{0, 1}, std::vector<ddd>{1, 1}, std::vector<ddd>{0, 0}};
-
+	NeuralNetwork nn = Trainer1.getNetwork();
 	for (int i = 0; i < testInput.size(); i++)
 	{
-		auto out = Trainer1.getNetwork().Run(&(testInput[i]));
+		auto out = nn.Run(&(testInput[i]));
 		std::cout << "Input: [" << testInput[i][0] << ", " << testInput[i][1] << "] \tOutput: " << out[0] << std::endl;
+		out = nn.RunGPU(&(testInput[i]));
+		std::cout << "Input: [" << testInput[i][0] << ", " << testInput[i][1] << "] \tOutput(GPU): " << out[0] << std::endl;
+		out = nn.RunGPU(&(testInput[i]));
+		std::cout << "Input: [" << testInput[i][0] << ", " << testInput[i][1] << "] \tOutput(GPU2): " << out[0] << std::endl;
 	}
 	// auto Trainer2 = weightLoadCPUTest(1000);
 	// largeTrainertestGPU();

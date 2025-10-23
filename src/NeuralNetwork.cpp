@@ -149,10 +149,10 @@ std::vector<ddd> NeuralNetwork::Run(std::vector<ddd> *input)
 {
 	return NetworkRunSum(*input, weights);
 }
-// std::vector<ddd> NeuralNetwork::RunGPU(std::vector<ddd> *input)
-// {
-// 	return FullRun(*input, weights)[weights.size() - 1];
-// }
+ std::vector<ddd> NeuralNetwork::RunGPU(std::vector<ddd> *input)
+ {
+ 	return RunNetwork(*input, weights);
+ }
 ddd NeuralNetwork::Learn(std::vector<ddd> input, std::vector<ddd> expectedOutput)
 {
 	// run but keep the values

@@ -12,7 +12,33 @@ extern "C" __global__ void outer_product(ddd *result, size_t resultPitch, ddd *v
 		result[i * resultPitch + j] = v1[i] * v2[j];
 	}
 }
+extern "C" __global__ void transpose(ddd *result, size_t resultPitch, ddd *input, size_t inputPitch, size_t width, size_t height)
+{
 
+	//result pitch A is the size of each layer
+	//result pitch B is the size of each row
+	int i = blockIdx.x * blockDim.x + threadIdx.x;
+	int j = blockIdx.y * blockDim.y + threadIdx.y;
+
+	if (i < width && j < height)
+	{
+		result[i * resultPitch + j] = input[j * inputPitch + i];
+	}
+}
+extern "C" __global__ void vector_matrix_multiply(ddd *result, ddd *vector, ddd *matrix, size_t matrixPitch, size_t vectorSize, size_t matrixCols)
+{
+	int col = blockIdx.x * blockDim.x + threadIdx.x;
+
+	if (col < matrixCols)
+	{
+		ddd sum = 0.0;
+		for (int i = 0; i < vectorSize; i++)
+		{
+			sum += vector[i] * matrix[i * matrixPitch + col];
+		}
+		result[col] = sum;
+	}
+}
 extern "C" __global__ void NetworkSum(ddd *result, ddd *input, ddd *weights, size_t inputSize, size_t neurons)
 {
 	int neuron = blockIdx.x * blockDim.x + threadIdx.x;
@@ -23,8 +49,14 @@ extern "C" __global__ void NetworkSum(ddd *result, ddd *input, ddd *weights, siz
 			result[neuron] += input[i] * weights[neuron * inputSize + i + 1];
 		}
 	}
-	result[neuron] += weights[neuron * inputSize]; // bias term
+	result[neuron] += weights[neuron * inputSize]; // add bias
+	result[neuron] = 1 / (1 + exp(-result[neuron])); //sigmoid activation
 }
+
+
+
+
+
 
 // should be a wrapper functuon to run multiple weighted sums in parallel
 // extern "C" std::vector<ddd> weightedSumsWp(std::vector<ddd> outsideValues, std::vector<std::vector<ddd>> insideValues)
