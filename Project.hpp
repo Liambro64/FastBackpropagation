@@ -20,7 +20,6 @@
 # include <string>
 # include <stdio.h>
 # include <unistd.h>
-# include <curl/curl.h>
 # include <regex>
 # include <signal.h>
 

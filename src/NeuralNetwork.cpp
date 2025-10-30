@@ -85,6 +85,11 @@ void NeuralNetwork::InjectBiases(const std::vector<std::vector<ddd>> &extractedB
 }
 NeuralNetwork::NeuralNetwork(int inputs, std::vector<int> layerSizes, ddd (*randFunc)()) : randFunc(randFunc), inputs(inputs)
 {
+	this->layerSizes.resize(layerSizes.size());
+	for (int i = 0; i < layerSizes.size(); i++)
+	{
+		this->layerSizes[i] = layerSizes[i];
+	}
 	weights = std::vector<std::vector<std::vector<ddd>>>();
 	// Initialize weights for each layer
 	for (int i = 0; i < layerSizes.size(); i++)
@@ -149,9 +154,13 @@ std::vector<ddd> NeuralNetwork::Run(std::vector<ddd> *input)
 {
 	return NetworkRunSum(*input, weights);
 }
+void NeuralNetwork::AllocateGPUWeights()
+{
+	dev_weights = AllocateWeightsGPU(&weights);
+}
  std::vector<ddd> NeuralNetwork::RunGPU(std::vector<ddd> *input)
  {
- 	return RunNetwork(*input, weights);
+ 	return RunNetwork(*input, dev_weights, layerSizes);
  }
 ddd NeuralNetwork::Learn(std::vector<ddd> input, std::vector<ddd> expectedOutput)
 {

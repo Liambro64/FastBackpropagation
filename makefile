@@ -20,9 +20,5 @@ rundebug : debugbuild
 	./$(dbgout)
 
 debugbuild :
-	nvcc -g -l curl $(main) $(code) -o $(dbgout)
+	nvcc -g $(main) $(code) -o $(dbgout)
 	
-runStreamTest : buildStreamTest
-	bin/streamtest.out
-buildStreamTest :
-	g++ tmp.cpp src/CommandPiper.cpp -o bin/streamtest.out

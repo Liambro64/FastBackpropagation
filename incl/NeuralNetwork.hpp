@@ -15,6 +15,8 @@ private:
 	//hopefully this will make it easier to calculate because they are all somewhat close
 	std::vector<std::vector<std::vector<ddd>>> weights;
 	int inputs;
+	std::vector<int> layerSizes;
+	std::vector<ddd *> dev_weights;
 	ddd (*randFunc)();
 public:
 
@@ -36,6 +38,7 @@ public:
 	//function to calculate the output of the neural network given an input std::vectortor
 	std::vector<ddd> Run(std::vector<ddd> *input);
 	void GenerateWeights(int inputs, std::vector<int> layerSizes);
+	void AllocateGPUWeights();
 	long SetWeightsFromArray(std::vector<ddd> weightsAsArray);
 	vec<vec<vec<ddd>>> getWeughts() { return weights; }
 	std::vector<ddd> RunGPU(std::vector<ddd> *input);

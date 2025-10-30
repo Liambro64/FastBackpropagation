@@ -154,6 +154,7 @@ int main()
 	Trainer1.SaveWeights("WeightsSaves/WeightsRCT2.fbp");
 	auto testInput = std::vector<std::vector<ddd>>{std::vector<ddd>{1, 0}, std::vector<ddd>{0, 1}, std::vector<ddd>{1, 1}, std::vector<ddd>{0, 0}};
 	NeuralNetwork nn = Trainer1.getNetwork();
+	nn.AllocateGPUWeights();
 	for (int i = 0; i < testInput.size(); i++)
 	{
 		auto out = nn.Run(&(testInput[i]));

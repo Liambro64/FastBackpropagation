@@ -41,16 +41,16 @@ extern "C" __global__ void vector_matrix_multiply(ddd *result, ddd *vector, ddd 
 }
 extern "C" __global__ void NetworkSum(ddd *result, ddd *input, ddd *weights, size_t inputSize, size_t neurons)
 {
-	int neuron = blockIdx.x * blockDim.x + threadIdx.x;
-	for (int i = 0; i < inputSize; i++)
-	{
-		if (neuron < neurons)
-		{
-			result[neuron] += input[i] * weights[neuron * inputSize + i + 1];
-		}
-	}
-	result[neuron] += weights[neuron * inputSize]; // add bias
-	result[neuron] = 1 / (1 + exp(-result[neuron])); //sigmoid activation
+    int neuron = blockIdx.x * blockDim.x + threadIdx.x;
+    if (neuron < neurons)
+    {
+        result[neuron] = weights[neuron * (inputSize + 1)];  // Initialize with bias (index 0)
+        for (int i = 0; i < inputSize; i++)
+        {
+            result[neuron] += input[i] * weights[neuron * (inputSize + 1) + i + 1];  // Weights start at index 1
+        }
+        result[neuron] = 1.0 / (1.0 + exp(-result[neuron]));  // Sigmoid
+    }
 }
 
 
@@ -103,181 +103,74 @@ extern "C" __global__ void NetworkSum(ddd *result, ddd *input, ddd *weights, siz
 // 	delete h_insides;
 // 	return result;
 // }
-extern "C" std::pair<ddd *, std::vector<std::vector<ddd *>>> AllocateWeightsGPU(std::vector<std::vector<std::vector<ddd>>> weights)
+
+
+extern "C" std::vector<ddd *> AllocateWeightsGPU(std::vector<std::vector<std::vector<ddd>>> *weights)
 {
-	std::vector<std::vector<ddd *>> d_weights(weights.size());
-	ddd *d_inputs;
-	if (cudaMalloc(&d_inputs, (weights[0][0].size() - 1) * sizeof(ddd)) != cudaError_t::cudaSuccess)
-	{
-		std::cerr << "Failed to allocate device memory for inputs." << std::endl;
-		std::__throw_bad_alloc();
-	}
-	size_t bpd = sizeof(ddd);
-	for (int i = 0; i < weights.size(); i++)
-	{
-		for (int j = 0; j < weights[i].size(); j++)
-		{
-			ddd *d_weight;
-			if (cudaMalloc(&d_weight, weights[i][j].size() * bpd) != cudaError_t::cudaSuccess)
-			{
-				std::cerr << "Failed to allocate device memory for weights." << std::endl;
-				// free previously allocated memory
-				for (int k = 0; k < i; k++)
-				{
-					for (int l = 0; l < d_weights[k].size(); l++)
-					{
-						cudaFree(d_weights[k][l]);
-					}
-				}
-				for (int l = 0; l < j; l++)
-				{
-					cudaFree(d_weights[i][l]);
-				}
-				std::__throw_bad_alloc();
-			}
-			if (cudaMemcpy(d_weight, weights[i][j].data(), weights[i][j].size() * bpd, cudaMemcpyHostToDevice) != cudaError_t::cudaSuccess)
-			{
-				std::cerr << "Failed to copy weights to device." << std::endl;
-				cudaFree(d_weight);
-				// free previously allocated memory
-				for (int k = 0; k < i; k++)
-				{
-					for (int l = 0; l < d_weights[k].size(); l++)
-					{
-						cudaFree(d_weights[k][l]);
-					}
-				}
-				for (int l = 0; l < j; l++)
-				{
-					cudaFree(d_weights[i][l]);
-				}
-				std::__throw_bad_alloc();
-			}
-			d_weights[i].push_back(d_weight);
-		}
-	}
-	return std::pair<ddd *, std::vector<std::vector<ddd *>>>();
+    std::vector<ddd *> d_weights;
+    size_t bpd = sizeof(ddd);
+    for (int i = 0; i < weights->size(); i++)
+    {
+        size_t layer_size = (*weights)[i].size() * (*weights)[i][0].size();
+        ddd *d_layer;
+        if (cudaMalloc(&d_layer, layer_size * bpd) != cudaError_t::cudaSuccess)  
+        {
+            std::cerr << "Failed to allocate device memory for weights." << std::endl;
+            // Free previously allocated memory
+            for (int k = 0; k < i; k++)
+            {
+                cudaFree(d_weights[k]);
+            }
+            throw std::bad_alloc();  // Fix: Standard exception
+        }
+        size_t offset = 0;
+        for (int j = 0; j < (*weights)[i].size(); j++)
+        {
+            cudaMemcpy(d_layer + offset, (*weights)[i][j].data(), (*weights)[i][j].size() * bpd, cudaMemcpyHostToDevice);
+            offset += (*weights)[i][j].size();
+        }
+        d_weights.push_back(d_layer);
+    }
+    return d_weights;
 }
 
-extern "C" std::vector<ddd> RunNetwork(std::vector<ddd> input, std::vector<std::vector<std::vector<ddd>>> weights)
+std::vector<ddd> RunNetwork(std::vector<ddd> input, std::vector<ddd *> dev_weights, std::vector<int> allSizes)
 {
-	unsigned int bpd = sizeof(ddd); // bytes per ddd
-	unsigned long inputSize = input.size();
-	std::vector<int> allSizes;
-	unsigned long totalSize = 0;
-	unsigned long biggestLayer = inputSize;
-	allSizes.resize(weights.size());
-	for (int i = 0; i < weights.size(); i++)
-	{
-		allSizes[i] = weights[i][0].size();
-		totalSize += allSizes[i];
-		if (allSizes[i] > biggestLayer)
-		{
-			biggestLayer = allSizes[i];
-		}
-	}
-	unsigned long bytesize = 0;
-	for (int i = 0; i < allSizes.size(); i++)
-	{
-		bytesize += (allSizes[i] * ((i == 0 ? inputSize : allSizes[i - 1]) + 1));
-	}
-	bytesize *= bpd;
-	ddd *host_weights = (ddd *)malloc(bytesize);
-	ddd *host_input = (ddd *)malloc(inputSize * bpd);
-
-	ddd *dev_weights;
-	ddd *dev_input;
-	ddd *dev_output;
-	unsigned long count = 0;
-	// flatten the weights.
-	for (int i = 0; i < weights.size(); i++)
-	{
-		for (int j = 0; j < weights[i].size(); j++)
-		{
-			for (int k = 0; k < weights[i][j].size(); k++)
-			{
-				host_weights[count++] = weights[i][j][k];
-			}
-		}
-	}
-	// make sure input is usable with cuda
-	for (int i = 0; i < inputSize; i++)
-	{
-		host_input[i] = input[i];
-	}
-
-	if (cudaMalloc(&dev_weights, bytesize) != cudaError_t::cudaSuccess)
-	{
-		std::cerr << "Failed to allocate device memory for weights." << std::endl;
-		free(host_weights);
-		free(host_input);
-	}
-	if (cudaMemcpy(dev_weights, host_weights, bytesize, cudaMemcpyHostToDevice) != cudaError_t::cudaSuccess)
-	{
-		std::cerr << "Failed to copy weights to device." << std::endl;
-		free(host_weights);
-		free(host_input);
-		cudaFree(dev_weights);
-	}
-	if (cudaMalloc(&dev_input, biggestLayer * bpd) != cudaError_t::cudaSuccess)
-	{
-		std::cerr << "Failed to allocate device memory for input." << std::endl;
-		free(host_weights);
-		free(host_input);
-		cudaFree(dev_weights);
-	}
-	if (cudaMemcpy(dev_input, host_input, inputSize * bpd, cudaMemcpyHostToDevice) != cudaError_t::cudaSuccess)
-	{
-		std::cerr << "Failed to copy input to device." << std::endl;
-		free(host_weights);
-		free(host_input);
-		cudaFree(dev_weights);
-		cudaFree(dev_input);
-	}
-	if (cudaMalloc(&dev_output, biggestLayer * bpd) != cudaError_t::cudaSuccess)
-	{
-		std::cerr << "Failed to allocate device memory for output." << std::endl;
-		free(host_weights);
-		free(host_input);
-		cudaFree(dev_weights);
-		cudaFree(dev_input);
-	}
-	size_t offset = 0;
-	for (int i = 0; i < allSizes.size(); i++)
-	{
-		dim3 blockSize = dim3(64, 1, 1);
-		dim3 gridSize = dim3((allSizes[i] + blockSize.x - 1) / blockSize.x, 1, 1);
-		NetworkSum<<<gridSize, blockSize>>>(dev_output, dev_input, dev_weights + offset, i == 0 ? inputSize : allSizes[i - 1], allSizes[i]);
-		cudaDeviceSynchronize();
-		offset += (allSizes[i] * ((i == 0 ? inputSize : allSizes[i - 1]) + 1));
-		if (i < allSizes.size() - 1)
-		{
-			if (cudaMemcpy(dev_input, dev_output, allSizes[i] * bpd, cudaMemcpyDeviceToDevice) != cudaError_t::cudaSuccess)
-			{
-				std::cerr << "Failed to copy output to input." << std::endl;
-				free(host_weights);
-				free(host_input);
-				cudaFree(dev_weights);
-				cudaFree(dev_input);
-				cudaFree(dev_output);
-			}
-		}
-	}
-	ddd *host_output = (ddd *)malloc(allSizes[allSizes.size() - 1] * bpd);
-	cudaMemcpy(host_output, dev_output, allSizes[allSizes.size() - 1] * bpd, cudaMemcpyDeviceToHost);
-	std::vector<ddd> result;
-	result.resize(allSizes[allSizes.size() - 1]);
-	for (int i = 0; i < allSizes[allSizes.size() - 1]; i++)
-	{
-		result[i] = host_output[i];
-	}
-	free(host_weights);
-	free(host_input);
-	free(host_output);
-	cudaFree(dev_weights);
-	cudaFree(dev_input);
-	cudaFree(dev_output);
-	return result;
+    unsigned int bpd = sizeof(ddd);
+    unsigned long inputSize = input.size();
+    unsigned long biggestLayer = inputSize;
+    for (int i = 0; i < dev_weights.size(); i++)
+    {
+        // Assuming you calculate allSizes elsewhere or pass it; for now, assume it's known
+        // allSizes[i] = ...;  // You need to compute or pass layer sizes
+        if (allSizes[i] > biggestLayer) biggestLayer = allSizes[i];
+    }
+    ddd *dev_input, *dev_output;
+    if (cudaMalloc(&dev_input, biggestLayer * bpd) != cudaError_t::cudaSuccess) return {};
+    if (cudaMemcpy(dev_input, input.data(), inputSize * bpd, cudaMemcpyHostToDevice) != cudaError_t::cudaSuccess)
+    {
+        cudaFree(dev_input); return {};
+    }
+    if (cudaMalloc(&dev_output, biggestLayer * bpd) != cudaError_t::cudaSuccess)
+    {
+        cudaFree(dev_input); return {};
+    }
+    for (int i = 0; i < allSizes.size(); i++)
+    {
+        dim3 blockSize(64, 1, 1);
+        dim3 gridSize((allSizes[i] + blockSize.x - 1) / blockSize.x, 1, 1);
+        NetworkSum<<<gridSize, blockSize>>>(dev_output, dev_input, dev_weights[i], i == 0 ? inputSize : allSizes[i - 1], allSizes[i]);
+        cudaDeviceSynchronize();  // Add error check
+        if (i < allSizes.size() - 1)
+        {
+            cudaMemcpy(dev_input, dev_output, allSizes[i] * bpd, cudaMemcpyDeviceToDevice);
+        }
+    }
+    std::vector<ddd> result(allSizes.back());
+    cudaMemcpy(result.data(), dev_output, allSizes.back() * bpd, cudaMemcpyDeviceToHost);
+    cudaFree(dev_input);
+    cudaFree(dev_output);
+    return result;
 }
 
 extern "C" std::vector<std::vector<ddd>> optest(std::vector<ddd> input, std::vector<ddd> input2)
