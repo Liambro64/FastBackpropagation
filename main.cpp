@@ -116,6 +116,13 @@ NetworkTrainer TrainOffFunctionsTest(int inputs = 2, int data = 20000, int epoch
 	Trainer.TrainOffFunctions(&makeInput, &makeOutput, epochs, 0.1, data);
 	return Trainer;
 }
+NetworkTrainer TrainOffFunctionsTestGPU(int inputs = 2, int data = 20000, int epochs = 250, std::vector<int> layers = {5, 7, 10, 13, 18, 26, 34, 21, 13, 7, 5, 3})
+{
+	int nextPo2 = (int)std::pow(2, std::ceil(std::log2(data)) + 1);
+	NetworkTrainer Trainer = NetworkTrainer(inputs, layers);
+	Trainer.TrainOffFunctionsGPU(&makeInput, &makeOutput, epochs, 0.1, data);
+	return Trainer;
+}
 
 // std::vector<std::vector<ddd>> optester() {
 // 	size_t v1size = 1000;
@@ -150,20 +157,27 @@ int main()
 	// smalltrainertest();
 	//auto functionTrainer = TrainOffFunctionsTest();
 	//optester();
+	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 	auto Trainer1 = TrainOffFunctionsTest(2, 5000, 50, {7, 1});
-	Trainer1.SaveWeights("WeightsSaves/WeightsRCT2.fbp");
+	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
+	std::cout << "Training Time (CPU): " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " ms" << std::endl;
+	Trainer1.SaveWeights("WeightsSaves/WeightsXORCPU.fbp");
+	begin = std::chrono::steady_clock::now();
+	auto Trainer2 = TrainOffFunctionsTestGPU(2, 5000, 50, {7, 1});
+	end = std::chrono::steady_clock::now();
+	std::cout << "Training Time (GPU): " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " ms" << std::endl;
 	auto testInput = std::vector<std::vector<ddd>>{std::vector<ddd>{1, 0}, std::vector<ddd>{0, 1}, std::vector<ddd>{1, 1}, std::vector<ddd>{0, 0}};
-	NeuralNetwork nn = Trainer1.getNetwork();
-	nn.AllocateGPUWeights();
-	for (int i = 0; i < testInput.size(); i++)
-	{
-		auto out = nn.Run(&(testInput[i]));
-		std::cout << "Input: [" << testInput[i][0] << ", " << testInput[i][1] << "] \tOutput: " << out[0] << std::endl;
-		out = nn.RunGPU(&(testInput[i]));
-		std::cout << "Input: [" << testInput[i][0] << ", " << testInput[i][1] << "] \tOutput(GPU): " << out[0] << std::endl;
-		out = nn.RunGPU(&(testInput[i]));
-		std::cout << "Input: [" << testInput[i][0] << ", " << testInput[i][1] << "] \tOutput(GPU2): " << out[0] << std::endl;
-	}
+	//NeuralNetwork nn = Trainer1.getNetwork();
+	//nn.AllocateGPUWeights();
+	//for (int i = 0; i < testInput.size(); i++)
+	//{
+	//	auto out = nn.Run(&(testInput[i]));
+	//	std::cout << "Input: [" << testInput[i][0] << ", " << testInput[i][1] << "] \tOutput: " << out[0] << std::endl;
+	//	out = nn.RunGPU(&(testInput[i]));
+	//	std::cout << "Input: [" << testInput[i][0] << ", " << testInput[i][1] << "] \tOutput(GPU): " << out[0] << std::endl;
+	//	out = nn.RunGPU(&(testInput[i]));
+	//	std::cout << "Input: [" << testInput[i][0] << ", " << testInput[i][1] << "] \tOutput(GPU2): " << out[0] << std::endl;
+	//}
 	// auto Trainer2 = weightLoadCPUTest(1000);
 	// largeTrainertestGPU();
 	return 0;

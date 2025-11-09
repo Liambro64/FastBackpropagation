@@ -39,6 +39,7 @@ public:
 	std::vector<ddd> Run(std::vector<ddd> *input);
 	void GenerateWeights(int inputs, std::vector<int> layerSizes);
 	void AllocateGPUWeights();
+	ddd LearnGPU(std::vector<ddd> input, std::vector<ddd> expectedOutput);
 	long SetWeightsFromArray(std::vector<ddd> weightsAsArray);
 	vec<vec<vec<ddd>>> getWeughts() { return weights; }
 	std::vector<ddd> RunGPU(std::vector<ddd> *input);

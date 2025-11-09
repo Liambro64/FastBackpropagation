@@ -158,10 +158,6 @@ void NeuralNetwork::AllocateGPUWeights()
 {
 	dev_weights = AllocateWeightsGPU(&weights);
 }
-ddd NeuralNetwork::LearnGPU(std::vector<ddd> input, std::vector<ddd> expectedOutput)
-{
-	return FullLearn(input, expectedOutput, dev_weights, layerSizes, alpha);
-}
  std::vector<ddd> NeuralNetwork::RunGPU(std::vector<ddd> *input)
  {
  	return RunNetwork(*input, dev_weights, layerSizes);
@@ -191,12 +187,13 @@ ddd NeuralNetwork::Learn(std::vector<ddd> input, std::vector<ddd> expectedOutput
 	{
 		errVals[weights.size() - 1][j] = LossDerivative(expectedOutput[j], values[weights.size()][j]) * sigmoidDerivative(values[weights.size()][j]);
 	}
+	auto preTransposedWeights = transpose(extractWeights());
 	for (int i = weights.size() - 1; i >= 0; i--)
 	{
 		weightChanges[i] = outerProduct(errVals[i], values[i]);
 		if (i != 0)
 		{
-			std::vector<ddd> err = utp_vector_matrix_multiply(errVals[i], weights[i]);
+			std::vector<ddd> err = vector_matrix_multiply(errVals[i], preTransposedWeights[i]);
 			for (int j = 0; j < weights[i - 1].size(); j++)
 			{
 				errVals[i - 1][j] = err[j] * sigmoidDerivative(values[i][j]);

@@ -19,6 +19,7 @@ std::vector<ddd>			scalar_multiply(ddd scalar, const std::vector<ddd>& vector);
 std::vector<std::vector<ddd>>		scalar_multiply(ddd scalar, const std::vector<std::vector<ddd>>& matrix);
 std::vector<ddd>			matrix_vector_multiply(const std::vector<std::vector<ddd>>& matrix, const std::vector<ddd>& vector);
 std::vector<ddd>			vector_matrix_multiply(const std::vector<ddd>& vector, const std::vector<std::vector<ddd>>& matrix);
+std::vector<ddd>			utp_vector_matrix_multiply(const std::vector<ddd> &vector, const std::vector<std::vector<ddd>> &matrix);
 std::vector<std::vector<ddd>>		transpose(const std::vector<std::vector<ddd>>& matrix);
 std::vector<std::vector<ddd>>		extractBiases(const std::vector<std::vector<std::vector<ddd>>>& weights);
 std::vector<std::vector<std::vector<ddd>>>	extractWeights(const std::vector<std::vector<std::vector<ddd>>>& weights);

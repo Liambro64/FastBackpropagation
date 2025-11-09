@@ -183,6 +183,40 @@ std::vector<ddd> NetworkTrainer::TrainOffFunctions(std::vector<ddd> (*input)(std
 		errorGradientVector.push_back(err);
 	}
 	return errorGradientVector;
+}std::vector<ddd> NetworkTrainer::TrainOffFunctionsGPU(std::vector<ddd> (*input)(std::vector<ddd>), std::vector<ddd> (*output)(std::vector<ddd>), int epochs, ddd learningRate, int datapoints)
+{
+	network.alpha = learningRate;
+	network.AllocateGPUWeights();
+	std::cout << "Training network with " << epochs << " epochs and learning rate " << network.alpha << " and a data size of " << datapoints << std::endl
+			  << std::endl
+			  << std::endl
+			  << std::endl;
+	std::vector<ddd> errorGradientVector(0);
+	for (int epoch = 0; epoch < epochs; epoch++)
+	{
+		ddd err = 0;
+		std::cout << "Epoch " << epoch + 1 << "/" << epochs << std::endl
+				  << std::endl
+				  << std::endl;
+		ddd lastError = 0;
+		for (int i = 0; i < datapoints; i++)
+		{
+			std::vector<ddd> position(this->inputs);
+			for (int j = 0; j < position.size(); j++)
+			{
+				position[j] = randD();
+			}
+			std::vector<ddd> inputs = input(position);
+			std::vector<ddd> expectedOut = output(position);
+			err += network.LearnGPU(inputs, expectedOut);
+			// std::cout << "Current Error: " << currentError << " for datapoint " << i << " for epoch " << epoch+1 << std::endl;
+			
+		}
+		err /= datapoints;
+		std::cout << "\x1b[1F\x1b[2K\x1b[1F\x1b[2K\x1b[1F\x1b[2K" << "Epoch " << epoch + 1 << "/" << epochs << " complete, Average Error: " << err << std::endl;
+		errorGradientVector.push_back(err);
+	}
+	return errorGradientVector;
 }
 
 

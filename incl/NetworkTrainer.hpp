@@ -17,6 +17,7 @@ public:
 	//returns a gradient of doubles which represents the error of the network over time
 	std::vector<ddd> Train(std::vector<ddd> (*formatExpectedOutput)(std::vector<ddd>, std::vector<ddd>), int epochs = 1000, ddd learningRate = 0.01, int datapoints = 1000, int printAfter = -1);
 	std::vector<ddd> TrainOffFunctions(std::vector<ddd> (*input)(std::vector<ddd>), std::vector<ddd> (*output)(std::vector<ddd>), int epochs = 100, ddd learningRate = 0.0001, int datapoints = 1000000);
+	std::vector<ddd> TrainOffFunctionsGPU(std::vector<ddd> (*input)(std::vector<ddd>), std::vector<ddd> (*output)(std::vector<ddd>), int epochs = 100, ddd learningRate = 0.0001, int datapoints = 1000000);
 	//std::vector<ddd> TrainGPU(int epochs = 1000, double learningRate = 0.01, int datapoints = 1000, int printAfter = -1);
 	std::vector<ddd> Run(std::vector<ddd> (*formatExpectedOutput)(std::vector<ddd>, std::vector<ddd>), int datapoints);
 	NeuralNetwork getNetwork() {return network;}

@@ -8,7 +8,7 @@ bin:
 	mkdir bin
 
 so :
-	g++ -shared -o bin/libNeuralNetwork.so src/NeuralNetwork.cpp src/NetworkTrainer.cpp src/Math.cpp -fPIC
+	nvcc -arch=sm_86 -shared -o bin/libNeuralNetwork.so src/NeuralNetwork.cpp src/NetworkTrainer.cpp src/Math.cpp --compiler-options -fPIC
 
 runtest : buildtest
 	./$(out)
@@ -20,5 +20,5 @@ rundebug : debugbuild
 	./$(dbgout)
 
 debugbuild :
-	nvcc -g $(main) $(code) -o $(dbgout)
+	nvcc -arch=sm_86 -g $(main) $(code) -o $(dbgout)
 	

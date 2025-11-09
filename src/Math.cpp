@@ -372,6 +372,22 @@ std::vector<ddd> vector_matrix_multiply(const std::vector<ddd> &vector, const st
     }
     return result;
 }
+std::vector<ddd> utp_vector_matrix_multiply(const std::vector<ddd> &vector, const std::vector<std::vector<ddd>> &matrix)
+{
+	if (matrix.empty() || matrix.size() != vector.size())
+	{
+		std::cerr << "Error: vector/matrix sizes do not match for vector-matrix multiply." << std::endl;
+		return {};
+	}
+	std::vector<ddd> result(matrix[0].size(), 0.0);
+	for (size_t j = 0; j < matrix[0].size() - 1; j++)
+	{
+		for (size_t i = 0; i < matrix.size(); i++)
+			result[j] += vector[i] * matrix[i][j + 1];
+	}
+	return result;
+}
+
 std::vector<std::vector<ddd>> transpose(const std::vector<std::vector<ddd>> &matrix)
 {
     if (matrix.empty())
