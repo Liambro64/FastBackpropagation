@@ -8,7 +8,7 @@ std::vector<std::vector<std::vector<ddd>>> NeuralNetwork::extractWeights()
 		std::vector<std::vector<ddd>> extractedLayer;
 		for (int j = 0; j < weights[i].size(); j++)
 		{
-			std::vector<ddd> extractedNeuron(weights[i][j].size() - 1);									// Exclude bias
+			std::vector<ddd> extractedNeuron(weights[i][j].size() - 1);							// Exclude bias
 			std::copy(weights[i][j].begin() + 1, weights[i][j].end(), extractedNeuron.begin()); // Copy weights excluding bias
 			extractedLayer.push_back(extractedNeuron);
 		}
@@ -162,10 +162,10 @@ ddd NeuralNetwork::LearnGPU(std::vector<ddd> input, std::vector<ddd> expectedOut
 {
 	return FullLearn(input, expectedOutput, dev_weights, layerSizes, alpha);
 }
- std::vector<ddd> NeuralNetwork::RunGPU(std::vector<ddd> *input)
- {
- 	return RunNetwork(*input, dev_weights, layerSizes);
- }
+std::vector<ddd> NeuralNetwork::RunGPU(std::vector<ddd> *input)
+{
+	return RunNetwork(*input, dev_weights, layerSizes);
+}
 ddd NeuralNetwork::Learn(std::vector<ddd> input, std::vector<ddd> expectedOutput)
 {
 	// run but keep the values
@@ -187,15 +187,12 @@ ddd NeuralNetwork::Learn(std::vector<ddd> input, std::vector<ddd> expectedOutput
 	{
 		errVals[weights.size() - 1][j] = LossDerivative(expectedOutput[j], values[weights.size()][j]) * activationFunctionDerivative(values[weights.size()][j]);
 	}
-	for (int i = weights.size() - 1; i >= 0; i--)
+	for (int i = weights.size() - 1; i > 0; i--)
 	{
-		if (i != 0)
+		errVals[i - 1] = utp_vector_matrix_multiply(errVals[i], weights[i]);
+		for (int j = 0; j < weights[i - 1].size(); j++)
 		{
-			errVals[i - 1] = utp_vector_matrix_multiply(errVals[i], weights[i]);
-			for (int j = 0; j < weights[i - 1].size(); j++)
-			{
-				errVals[i - 1][j] *= activationFunctionDerivative(values[i][j]);
-			}
+			errVals[i - 1][j] *= activationFunctionDerivative(values[i][j]);
 		}
 	}
 	for (int i = 0; i < weights.size(); i++)
@@ -222,7 +219,7 @@ size_t NeuralNetwork::SaveWeights(std::string filename)
 	{
 		std::string size = "";
 		std::fstream stream(filename);
-		
+
 		if (stream.is_open() == false)
 			throw std::invalid_argument("Couldnt load file into stream");
 		for (int i = 0; i < weights.size(); i++)
