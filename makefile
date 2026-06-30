@@ -7,7 +7,7 @@ all : bin runtest
 bin: 
 	mkdir bin
 
-so :
+lib :
 	nvcc -arch=sm_86 -shared -o bin/libNeuralNetwork.so src/NeuralNetwork.cpp src/NetworkTrainer.cpp src/Math.cpp --compiler-options -fPIC
 
 runtest : buildtest

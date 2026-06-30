@@ -167,6 +167,14 @@ extern "C" std::vector<ddd *> AllocateWeightsGPU(std::vector<std::vector<std::ve
     return d_weights;
 }
 
+void FreeWeightsGPU(std::vector<ddd *> &d_weights)
+{
+	for (int i = 0; i < d_weights.size(); i++)
+	{
+		cudaFree(d_weights[i]);
+	}
+	d_weights.clear();
+}
 std::vector<ddd> RunNetwork(std::vector<ddd> input, std::vector<ddd *> dev_weights, std::vector<int> allSizes)
 {
     unsigned int bpd = sizeof(ddd);
@@ -293,7 +301,7 @@ extern "C" std::vector<std::vector<ddd>> optest(std::vector<ddd> input, std::vec
 extern "C" __global__ void InitialErrorCalculation(ddd *result, ddd *layer_outs, ddd *expected_values, size_t layerSize) {
 	int i = blockIdx.x * blockDim.x + threadIdx.x;
 	if (i < layerSize) // V loss derivative				  V sigmoid derivative
-		result[i] = (2 * (expected_values[i] - layer_outs[i])) * (layer_outs[i] * (1 - layer_outs[i]));
+		result[i] = (2 * (layer_outs[i] - expected_values[i])) * (layer_outs[i] * (1 - layer_outs[i]));
 }
 
 extern "C" ddd FullLearn(std::vector<ddd> input, std::vector<ddd> expected_values, std::vector<ddd *> dev_weights, std::vector<int> layerSizes, ddd alpha)
@@ -362,6 +370,7 @@ extern "C" ddd FullLearn(std::vector<ddd> input, std::vector<ddd> expected_value
 	ddd final_error;
 	cudaMemcpy(&final_error, dev_final_error, sizeof(ddd), cudaMemcpyDeviceToHost);
 	cudaFree(dev_final_error);
+	final_error /= (ddd)expectedSize;
 	//std::cout << "Final error: " << final_error << std::endl;
 	cudaDeviceSynchronize();
 	for (int i = 0; i < outs.size(); i++) {

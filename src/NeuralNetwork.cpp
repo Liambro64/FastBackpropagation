@@ -181,25 +181,20 @@ ddd NeuralNetwork::Learn(std::vector<ddd> input, std::vector<ddd> expectedOutput
 		}
 	}
 	double loss = LossFunction(values[weights.size()], expectedOutput);
-	std::vector<std::vector<ddd>> errVals(weights.size());			  // deltas (for biases)
-	std::vector<std::vector<std::vector<ddd>>> weightChanges(weights.size()); // deltas (for weights)
-	for (int i = 0; i < weights.size(); i++)
-	{
-		errVals[i].resize(weights[i].size());
-	}
+	std::vector<std::vector<ddd>> errVals(weights.size());
+	errVals[weights.size() - 1].resize(weights[weights.size() - 1].size());
 	for (int j = 0; j < weights[weights.size() - 1].size(); j++)
 	{
-		errVals[weights.size() - 1][j] = LossDerivative(expectedOutput[j], values[weights.size()][j]) * sigmoidDerivative(values[weights.size()][j]);
+		errVals[weights.size() - 1][j] = LossDerivative(expectedOutput[j], values[weights.size()][j]) * activationFunctionDerivative(values[weights.size()][j]);
 	}
 	for (int i = weights.size() - 1; i >= 0; i--)
 	{
-		weightChanges[i] = outerProduct(errVals[i], values[i]);
 		if (i != 0)
 		{
-			std::vector<ddd> err = utp_vector_matrix_multiply(errVals[i], weights[i]);
+			errVals[i - 1] = utp_vector_matrix_multiply(errVals[i], weights[i]);
 			for (int j = 0; j < weights[i - 1].size(); j++)
 			{
-				errVals[i - 1][j] = err[j] * sigmoidDerivative(values[i][j]);
+				errVals[i - 1][j] *= activationFunctionDerivative(values[i][j]);
 			}
 		}
 	}
@@ -210,7 +205,7 @@ ddd NeuralNetwork::Learn(std::vector<ddd> input, std::vector<ddd> expectedOutput
 			weights[i][j][0] += alpha * errVals[i][j];
 			for (int k = 1; k < weights[i][j].size(); k++)
 			{
-				weights[i][j][k] += alpha * weightChanges[i][j][k - 1];
+				weights[i][j][k] += alpha * errVals[i][j] * values[i][k - 1];
 			}
 		}
 	}

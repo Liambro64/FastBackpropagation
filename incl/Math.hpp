@@ -3,6 +3,8 @@
 
 # include "../Project.hpp"
 
+ddd activationFunction(ddd x);
+ddd activationFunctionDerivative(ddd x);
 ddd 				LossFunction(ddd prediction, ddd expected, int size);
 ddd					LossFunction(std::vector<ddd> prediction, std::vector<ddd> expected);
 ddd 				LossDerivative(ddd prediction, ddd expected);

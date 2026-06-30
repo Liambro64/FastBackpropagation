@@ -158,15 +158,15 @@ int main()
 	//auto functionTrainer = TrainOffFunctionsTest();
 	//optester();
 	std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-	auto Trainer1 = TrainOffFunctionsTest(2, 5000, 50, {7, 1});
+	auto Trainer1 = TrainOffFunctionsTest(2, 5000, 50, {5, 4, 3, 1});
 	std::chrono::steady_clock::time_point end = std::chrono::steady_clock::now();
 	std::cout << "Training Time (CPU): " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " ms" << std::endl;
-	Trainer1.SaveWeights("WeightsSaves/WeightsXORCPU.fbp");
-	begin = std::chrono::steady_clock::now();
-	auto Trainer2 = TrainOffFunctionsTestGPU(2, 5000, 50, {7, 1});
-	end = std::chrono::steady_clock::now();
-	std::cout << "Training Time (GPU): " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " ms" << std::endl;
-	auto testInput = std::vector<std::vector<ddd>>{std::vector<ddd>{1, 0}, std::vector<ddd>{0, 1}, std::vector<ddd>{1, 1}, std::vector<ddd>{0, 0}};
+	Trainer1.SaveWeights("WeightsSaves/WeightsXORCPU2.fbp");
+	//begin = std::chrono::steady_clock::now();
+	//auto Trainer2 = TrainOffFunctionsTestGPU(2, 5000, 50, {7, 1});
+	//end = std::chrono::steady_clock::now();
+	//std::cout << "Training Time (GPU): " << std::chrono::duration_cast<std::chrono::milliseconds>(end - begin).count() << " ms" << std::endl;
+	//auto testInput = std::vector<std::vector<ddd>>{std::vector<ddd>{1, 0}, std::vector<ddd>{0, 1}, std::vector<ddd>{1, 1}, std::vector<ddd>{0, 0}};
 	//NeuralNetwork nn = Trainer1.getNetwork();
 	//nn.AllocateGPUWeights();
 	//for (int i = 0; i < testInput.size(); i++)

@@ -26,7 +26,11 @@ public:
 	//constructor
 	NeuralNetwork(int inputs, std::vector<int> layerSizes, ddd randFunc());
 	//destructor
-	~NeuralNetwork() {};
+	~NeuralNetwork() {
+		if (dev_weights.size() > 0) {
+			FreeWeightsGPU(dev_weights);
+		}
+	};
 	std::vector<std::vector<ddd>>		extractBiases();
 	std::vector<std::vector<std::vector<ddd>>>	extractWeights();
 

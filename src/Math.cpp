@@ -190,6 +190,14 @@ ddd sigmoidDerivative(ddd x)
 {
     return x * (1 - x);
 }
+ddd activationFunction(ddd x)
+{
+    return std::tanh(x);
+}
+ddd activationFunctionDerivative(ddd x)
+{
+    return 1 - std::pow(activationFunction(x), 2);
+}
 size_t max(std::vector<size_t> &v)
 {
     size_t maxVal = 0;
@@ -379,7 +387,7 @@ std::vector<ddd> utp_vector_matrix_multiply(const std::vector<ddd> &vector, cons
 		std::cerr << "Error: vector/matrix sizes do not match for vector-matrix multiply." << std::endl;
 		return {};
 	}
-	std::vector<ddd> result(matrix[0].size(), 0.0);
+	std::vector<ddd> result(matrix[0].size() - 1, 0.0);
 	for (size_t j = 0; j < matrix[0].size() - 1; j++)
 	{
 		for (size_t i = 0; i < matrix.size(); i++)
@@ -487,7 +495,7 @@ ddd weightedSum(std::vector<ddd> outsideValues, std::vector<ddd> insideValues)
     {
         sum += outsideValues[i] * insideValues[i + 1];
     }
-    return sigmoid(sum);
+    return activationFunction(sum);
 }
 
 std::string DoubleToUnreadableString(ddd *d) {
